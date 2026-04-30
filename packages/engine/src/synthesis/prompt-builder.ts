@@ -471,7 +471,9 @@ export function buildSkillFileNarrativePrompt(
     .map(a => `### ${a.name}\n${a.analysis.slice(0, 600)}`)
     .join('\n\n');
 
-  const schema = `{"topology":{"layers":[{"name":"","path":"","responsibility":"","keyFiles":[]}]},"apis":{"external":[{"service":"","baseUrlPattern":"","authMethod":"","filesReferencing":[]}],"webhooks":[{"path":"","provider":"","file":"","line":0,"verified":false}]},"patterns":{"authFlow":"","errorHandling":"","testingApproach":"","logging":"","apiVersioning":null,"rateLimiting":null},"devHooks":{"addApiRoute":"","addDbModel":"","addMigration":"","addTest":"","addMiddleware":"","addEnvVar":""},"constraints":{"knownQuirks":[],"breakingChangeRisks":[],"techDebtHotspots":[]},"infra":{"orchestration":null,"hasMonitoring":false}}`;
+  // Compact fields first — if output is truncated, we still have the highest-value data.
+  // topology.layers is last and capped because large monorepos can generate 20+ entries.
+  const schema = `{"patterns":{"authFlow":"","errorHandling":"","testingApproach":"","logging":"","apiVersioning":null,"rateLimiting":null},"devHooks":{"addApiRoute":"","addDbModel":"","addMigration":"","addTest":"","addMiddleware":"","addEnvVar":""},"constraints":{"knownQuirks":[],"breakingChangeRisks":[],"techDebtHotspots":[]},"infra":{"orchestration":null,"hasMonitoring":false},"apis":{"external":[{"service":"","baseUrlPattern":"","authMethod":"","filesReferencing":[]}],"webhooks":[{"path":"","provider":"","file":"","line":0,"verified":false}]},"topology":{"layers":[{"name":"","path":"","responsibility":"","keyFiles":[]}]}}`;
 
   return `Repository: ${harvest.meta.repoName}
 Stack: ${harvest.languages.primary} | Framework: ${harvest.framework.primary ?? 'unknown'} | DB: ${harvest.databases.engines.join(', ') || 'none'} | ORM: ${harvest.databases.orm ?? 'none'}
@@ -488,13 +490,14 @@ ${analysisSummary}
 ---
 
 Produce ONLY this narrative patch as minified JSON. Each string: 1–2 sentences, codebase-specific.
-- topology.layers: one entry per top-level directory (real paths, real responsibilities)
-- apis.external: external HTTP services this codebase calls (not its own routes)
-- apis.webhooks: inbound webhook paths (leave empty array if none)
+Output fields IN ORDER as shown — most important first.
 - patterns: describe auth/errors/tests/logging as they actually work here
 - devHooks: concrete file-level instructions for THIS codebase (e.g. "Add handler to packages/server/src/routes/")
 - constraints: real quirks and risks from the analysis
 - infra.hasMonitoring: true only if prometheus/datadog/cloudwatch/etc found
+- apis.external: external HTTP services this codebase calls (not its own routes)
+- apis.webhooks: inbound webhook paths (leave empty array if none)
+- topology.layers: max 10 entries for the most important directories, max 3 keyFiles each
 
 Schema:
 ${schema}

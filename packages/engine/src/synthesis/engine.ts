@@ -20,7 +20,7 @@ const MAX_SUBSYSTEMS = 8;
 // Output token budgets
 const DEEP_DIVE_MAX_TOKENS         = 8_000;
 const ARTIFACT_MAX_TOKENS          = 32_000; // arch-map and gap-report prose
-const SKILL_FILE_NARRATIVE_TOKENS  = 4_000;  // narrative patch only — structural data comes from harvest
+const SKILL_FILE_NARRATIVE_TOKENS  = 6_000;  // narrative patch only — structural data comes from harvest
 
 export const OVERALL_ANALYSIS_TIMEOUT_MS = 60 * 60_000;
 
@@ -208,6 +208,45 @@ async function analyzeSubsystem(
   return { name: spec.name, analysis: buildRawFallbackSummary(spec.name, slice), tokensUsed: 0, status: 'shallow' };
 }
 
+// ─── Narrative JSON Repair ────────────────────────────────────────────────────
+// Salvages partial results when the LLM truncates the JSON mid-output.
+// Scans forward tracking nesting depth; finds the last top-level comma (depth==1),
+// truncates there, closes the root object, and tries to parse.
+
+function parseNarrativePatch(text: string): SkillFileNarrativePatch | null {
+  if (!text) return null;
+
+  // Full parse first
+  try { return JSON.parse(text) as SkillFileNarrativePatch; } catch { /* fall through to repair */ }
+
+  // O(n) scan: track nesting depth to find last safe top-level separator
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let lastSafeCommaPos = -1;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i] ?? '';
+    if (escape)           { escape = false; continue; }
+    if (c === '\\' && inString) { escape = true; continue; }
+    if (c === '"')        { inString = !inString; continue; }
+    if (inString)         continue;
+    if (c === '{' || c === '[') { depth++; continue; }
+    if (c === '}' || c === ']') { depth--; continue; }
+    if (c === ',' && depth === 1) lastSafeCommaPos = i;
+  }
+
+  if (lastSafeCommaPos < 1) return null;
+
+  try {
+    const partial = JSON.parse(text.slice(0, lastSafeCommaPos) + '}') as SkillFileNarrativePatch;
+    process.stderr.write('[geodesic] skill-file: narrative was truncated — partial patch recovered\n');
+    return partial;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Stage 3: Artifacts (parallel) ───────────────────────────────────────────
 
 async function runArtifacts(
@@ -240,14 +279,17 @@ async function runArtifacts(
     largeCall(buildGapReportPrompt(harvest, analyses, discoveryContext),              'gap-report'),
   ]);
 
-  // Parse the narrative patch — graceful fallback to empty patch on failure
+  // Parse the narrative patch — attempt full parse, then repair truncated JSON, then empty patch
   let narrativePatch: SkillFileNarrativePatch = {};
-  try {
+  {
     const cleaned = narrativeResult.content.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
-    narrativePatch = JSON.parse(cleaned) as SkillFileNarrativePatch;
-    process.stderr.write('[geodesic] skill-file: narrative patch applied\n');
-  } catch (err) {
-    process.stderr.write(`[geodesic] skill-file: narrative parse failed (${err instanceof Error ? err.message : String(err)}) — using empty patch\n`);
+    const repaired = parseNarrativePatch(cleaned);
+    if (repaired !== null) {
+      narrativePatch = repaired;
+      process.stderr.write('[geodesic] skill-file: narrative patch applied\n');
+    } else {
+      process.stderr.write('[geodesic] skill-file: narrative parse failed — using empty patch\n');
+    }
   }
 
   const skillFile = assembleSkillFile(harvest, {
