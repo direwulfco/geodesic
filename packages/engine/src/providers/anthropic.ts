@@ -27,7 +27,7 @@ async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>): Promise<T>
   let lastErr: unknown;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timer = setTimeout(() => { controller.abort(); }, REQUEST_TIMEOUT_MS);
     try {
       const result = await fn(controller.signal);
       clearTimeout(timer);

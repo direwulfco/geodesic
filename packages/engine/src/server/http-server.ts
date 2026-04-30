@@ -1,5 +1,6 @@
 import * as http from 'http';
 import type { GeodesicConfig } from '@geodesic/types';
+import type { CrystalSyncConfig } from '../crystal/github-sync.js';
 import { loadConfig } from '../providers/index.js';
 import { loadProvider } from '../providers/index.js';
 import { CrystalStore, getCrystalsDir, pullCrystals } from '../crystal/index.js';
@@ -37,7 +38,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 
 function checkAnalyzeRateLimit(): boolean {
   const now = Date.now();
-  while (analyzeCallTimes.length > 0 && analyzeCallTimes[0]! < now - ANALYZE_RATE_WINDOW_MS) {
+  while (analyzeCallTimes.length > 0 && (analyzeCallTimes[0] ?? 0) < now - ANALYZE_RATE_WINDOW_MS) {
     analyzeCallTimes.shift();
   }
   if (analyzeCallTimes.length >= ANALYZE_RATE_LIMIT) return false;
@@ -101,7 +102,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       // POST /crystals/sync
       if (method === 'POST' && url === '/crystals/sync') {
         const crystalsDir = getCrystalsDir(undefined);
-        let syncConfig: import('../crystal/github-sync.js').CrystalSyncConfig = {};
+        let syncConfig: CrystalSyncConfig = {};
         try { syncConfig = loadConfig(); } catch { /* no config yet */ }
         const result = await pullCrystals(crystalsDir, syncConfig);
         json(res, result.success ? 200 : 500, result);

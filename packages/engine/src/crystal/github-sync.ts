@@ -12,8 +12,6 @@ const SYNC_STATE_FILE = '.geodesic-sync-state.json';
 const FITNESS_LOG_FILE = 'fitness_log.jsonl';
 const INDEX_FILE = 'CRYSTAL_INDEX.md';
 const MAX_CONSECUTIVE_FAILURES = 3;
-// Only these files are ever staged — attestation, secrets, and arbitrary files are never committed
-const SAFE_STAGE_PATTERNS = [INDEX_FILE, FITNESS_LOG_FILE, SYNC_STATE_FILE];
 
 interface SyncState {
   consecutiveFailures: number;
@@ -60,7 +58,7 @@ function authedUrl(repoUrl: string, token: string): string {
 async function git(cwd: string, args: string[]): Promise<{ success: boolean; stderr: string; stdout: string }> {
   try {
     const { stdout, stderr } = await execFileAsync('git', args, { cwd, encoding: 'utf8' });
-    return { success: true, stderr: (stderr ?? '').trim(), stdout: (stdout ?? '').trim() };
+    return { success: true, stderr: stderr.trim(), stdout: stdout.trim() };
   } catch (err: unknown) {
     const e = err as { stderr?: string; stdout?: string };
     return { success: false, stderr: (e.stderr ?? '').trim(), stdout: (e.stdout ?? '').trim() };

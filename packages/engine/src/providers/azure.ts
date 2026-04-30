@@ -105,7 +105,7 @@ export function createProvider(config: GeodesicConfig): AIProvider {
           let outputTokens = 0;
 
           for await (const chunk of stream) {
-            content += chunk.choices[0]?.delta?.content ?? '';
+            content += chunk.choices[0]?.delta.content ?? '';
             if (chunk.usage) {
               inputTokens = chunk.usage.prompt_tokens;
               outputTokens = chunk.usage.completion_tokens;

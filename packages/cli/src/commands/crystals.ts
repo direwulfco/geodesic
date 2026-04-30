@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import type { GeodesicConfig } from '@geodesic/types';
 import { CrystalStore, getCrystalsDir, generateCrystalIndex, pullCrystals } from '@geodesic/engine';
 import { loadConfig } from '@geodesic/engine';
 
@@ -53,7 +54,7 @@ export function registerCrystalsCommand(program: Command): void {
     .description('Sync Crystal Store with your configured repository')
     .action(async () => {
       const store = getStore();
-      let config: import('@geodesic/types').GeodesicConfig | undefined;
+      let config: GeodesicConfig | undefined = undefined;
       try { config = loadConfig(); } catch { /* no config — sync will run local-only */ }
       const result = await pullCrystals(store.dirPath, config);
       if (result.success) {

@@ -26,12 +26,17 @@ export interface ArtifactPaths {
 export function writeArtifacts(synthesis: SynthesisResult, outputDir: string): ArtifactPaths {
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const files: Array<readonly [finalPath: string, content: string]> = [
-    [path.join(outputDir, 'architecture-map.md'),    renderArchitectureMap(synthesis)],
-    [path.join(outputDir, 'skill-file.geodesic.json'),  renderSkillFileJson(synthesis.skillFile)],
-    [path.join(outputDir, 'skill-file.geodesic.md'),    renderSkillFileMd(synthesis.skillFile)],
-    [path.join(outputDir, 'gap-report.md'),          renderGapReport(synthesis.gapReport)],
-  ] as const;
+  const archMapPath  = path.join(outputDir, 'architecture-map.md');
+  const skillJsonPath = path.join(outputDir, 'skill-file.geodesic.json');
+  const skillMdPath  = path.join(outputDir, 'skill-file.geodesic.md');
+  const gapPath      = path.join(outputDir, 'gap-report.md');
+
+  const files: Array<readonly [string, string]> = [
+    [archMapPath,  renderArchitectureMap(synthesis)],
+    [skillJsonPath, renderSkillFileJson(synthesis.skillFile)],
+    [skillMdPath,  renderSkillFileMd(synthesis.skillFile)],
+    [gapPath,      renderGapReport(synthesis.gapReport)],
+  ];
 
   // Write to .tmp siblings first; on success rename atomically so no partial state is visible
   const tmpPaths: string[] = [];
@@ -41,9 +46,10 @@ export function writeArtifacts(synthesis: SynthesisResult, outputDir: string): A
       fs.writeFileSync(tmpPath, content, 'utf8');
       tmpPaths.push(tmpPath);
     }
-    for (let i = 0; i < files.length; i++) {
-      fs.renameSync(tmpPaths[i]!, files[i]![0]);
-    }
+    files.forEach(([finalPath], i) => {
+      const tmp = tmpPaths[i];
+      if (tmp !== undefined) fs.renameSync(tmp, finalPath);
+    });
   } catch (err) {
     for (const tmpPath of tmpPaths) {
       try { fs.unlinkSync(tmpPath); } catch { /* ignore cleanup errors */ }
@@ -52,9 +58,9 @@ export function writeArtifacts(synthesis: SynthesisResult, outputDir: string): A
   }
 
   return {
-    architectureMap: files[0]![0],
-    skillFileJson:   files[1]![0],
-    skillFileMd:     files[2]![0],
-    gapReport:       files[3]![0],
+    architectureMap: archMapPath,
+    skillFileJson:   skillJsonPath,
+    skillFileMd:     skillMdPath,
+    gapReport:       gapPath,
   };
 }

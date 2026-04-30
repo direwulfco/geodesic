@@ -93,7 +93,7 @@ export function createProvider(config: GeodesicConfig): AIProvider {
       let content = '';
       let inputTokens = 0;
       let outputTokens = 0;
-      const reader = response.body.getReader();
+      const reader = response.body.getReader() as ReadableStreamDefaultReader<Uint8Array>;
       const decoder = new TextDecoder();
       // lineBuffer accumulates bytes across read() calls so JSON split across TCP chunks is parsed whole
       let lineBuffer = '';
@@ -114,7 +114,7 @@ export function createProvider(config: GeodesicConfig): AIProvider {
         }
       }
 
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
         lineBuffer += decoder.decode(value, { stream: true });

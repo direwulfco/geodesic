@@ -1,4 +1,4 @@
-import type { HarvestResult, Crystal, SynthesisResult, AIProvider } from '@geodesic/types';
+import type { HarvestResult, Crystal, SynthesisResult, AIProvider, SkillFileJson } from '@geodesic/types';
 import {
   buildSystemPrompt,
   buildDiscoveryPrompt,
@@ -29,23 +29,24 @@ export const OVERALL_ANALYSIS_TIMEOUT_MS = 60 * 60_000;
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error(`${label} timed out after ${String(Math.round(ms / 1000 / 60))} min`)),
+      () => { reject(new Error(`${label} timed out after ${String(Math.round(ms / 1000 / 60))} min`)); },
       ms,
     );
     promise.then(
       v => { clearTimeout(timer); resolve(v); },
-      e => { clearTimeout(timer); reject(e); },
+      (e: unknown) => { clearTimeout(timer); reject(e instanceof Error ? e : new Error(String(e))); },
     );
   });
 }
 
 async function pMap<T, R>(items: T[], fn: (item: T) => Promise<R>, limit: number): Promise<R[]> {
-  const results: R[] = new Array(items.length);
+  const results = new Array<R>(items.length);
   let next = 0;
   async function worker(): Promise<void> {
     while (next < items.length) {
       const i = next++;
-      results[i] = await fn(items[i]!);
+      const item = items[i];
+      if (item !== undefined) results[i] = await fn(item);
     }
   }
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
@@ -128,7 +129,7 @@ function sliceByPrefixes(harvest: HarvestResult, prefixes: string[]): HarvestRes
 function parseDiscovery(raw: string): { subsystems: SubsystemSpec[]; context: string } {
   try {
     const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
-    const text = jsonMatch ? jsonMatch[1]! : raw.trim();
+    const text = jsonMatch?.[1] ?? raw.trim();
     const parsed = JSON.parse(text) as Record<string, unknown>;
     const context = typeof parsed['context'] === 'string' ? parsed['context'] : '';
     const subs: SubsystemSpec[] = (Array.isArray(parsed['subsystems']) ? parsed['subsystems'] : [])
@@ -217,7 +218,7 @@ async function runArtifacts(
   discoveryContext: string,
   provider: AIProvider,
   systemPrompt: string,
-): Promise<{ archMap: string; skillFile: import('@geodesic/types').SkillFileJson; gapReport: string; tokensUsed: number }> {
+): Promise<{ archMap: string; skillFile: SkillFileJson; gapReport: string; tokensUsed: number }> {
   const analyses = results.map(r => ({ name: r.name, analysis: r.analysis, status: r.status }));
 
   process.stderr.write('[geodesic] integration: arch-map, skill-file narrative, gap-report in parallel…\n');
