@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/hyperpaced/geode/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geode/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geode"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geode?label=VS%20Code" alt="VS Code Marketplace" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geode-ai"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geode-ai?label=VS%20Code" alt="VS Code Marketplace" /></a>
 </p>
 
 ---

@@ -1,5 +1,5 @@
 {
-  "name": "geode",
+  "name": "geode-ai",
   "displayName": "Geode",
   "description": "Auto-topology agent: deep-dive codebase analysis with PHI/HIPAA-safe AI synthesis, Crystal learning, and scored gap reports.",
   "version": "0.1.0",
