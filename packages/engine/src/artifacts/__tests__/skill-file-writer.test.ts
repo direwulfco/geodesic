@@ -11,7 +11,7 @@ describe('renderSkillFileJson', () => {
   it('includes $schema field', () => {
     const output = renderSkillFileJson(makeSkillFile());
     const parsed = JSON.parse(output) as Record<string, unknown>;
-    expect(parsed['$schema']).toBe('https://geode.dev/schema/v1/skill-file.json');
+    expect(parsed['$schema']).toBe('https://geodesic.dev/schema/v1/skill-file.json');
   });
 
   it('serializes meta fields in snake_case', () => {
@@ -93,7 +93,7 @@ describe('renderSkillFileJson', () => {
 describe('renderSkillFileMd', () => {
   it('includes repo name in heading', () => {
     const output = renderSkillFileMd(makeSkillFile());
-    expect(output).toContain('my-app — Geode Skill File');
+    expect(output).toContain('my-app — Geodesic Skill File');
   });
 
   it('shows cold start when crystalId is null', () => {

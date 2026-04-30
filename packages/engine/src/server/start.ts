@@ -1,6 +1,6 @@
 import * as net from 'net';
 import { createServer } from './http-server.js';
-import { GEODE_VERSION } from '../version.js';
+import { GEODESIC_VERSION } from '../version.js';
 
 function findFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -20,7 +20,7 @@ function findFreePort(): Promise<number> {
 
 async function main(): Promise<void> {
   const port = await findFreePort();
-  const server = createServer(GEODE_VERSION);
+  const server = createServer(GEODESIC_VERSION);
 
   server.listen(port, '127.0.0.1', () => {
     // Write port to stdout so engine manager can capture it

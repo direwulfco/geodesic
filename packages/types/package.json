@@ -1,16 +1,16 @@
 {
-  "name": "@geode/types",
+  "name": "@geodesic/types",
   "version": "0.1.0",
   "private": false,
-  "description": "Shared TypeScript types and interfaces for the Geode engine.",
+  "description": "Shared TypeScript types and interfaces for the Geodesic engine.",
   "license": "MIT",
-  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "homepage": "https://github.com/hyperpaced/geodesic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geode"
+    "url": "https://github.com/hyperpaced/geodesic"
   },
   "bugs": {
-    "url": "https://github.com/hyperpaced/geode/issues"
+    "url": "https://github.com/hyperpaced/geodesic/issues"
   },
   "author": "HyperPace <info@hyperpace.ai>",
   "main": "dist/index.js",

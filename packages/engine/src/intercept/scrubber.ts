@@ -6,8 +6,8 @@ import type {
   PiiType,
   ScrubConfidence,
   UncertainDetection,
-} from '@geode/types';
-import { PurityCheckError } from '@geode/types';
+} from '@geodesic/types';
+import { PurityCheckError } from '@geodesic/types';
 import { detectInValue, isStructuralField } from './detector.js';
 import { generateRefId, buildToken, applyReplacements } from './tokenizer.js';
 import { AttestationChain, computeHash } from './attestation.js';
@@ -163,7 +163,7 @@ export function intercept(
         attestationRef: entry.entryId,
         recommendedAction:
           `Open the source repository at payload path '${p.jsonPath}'. ` +
-          `Confirm or clear the detection manually via: geode review mark-reviewed --ref ${entry.entryId}`,
+          `Confirm or clear the detection manually via: geodesic review mark-reviewed --ref ${entry.entryId}`,
         markedReviewed: false,
         reviewedAt: null,
         reviewedBy: null,

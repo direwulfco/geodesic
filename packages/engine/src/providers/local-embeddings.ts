@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import type { EmbeddingResult } from '@geode/types';
+import type { EmbeddingResult } from '@geodesic/types';
 
 const EMBEDDING_DIM = 1536;
 

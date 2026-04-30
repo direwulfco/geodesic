@@ -3,10 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { parseDependencyManifests } from '../dependency-parser.js';
-import type { FileTreeNode } from '@geode/types';
+import type { FileTreeNode } from '@geodesic/types';
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'geode-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-test-'));
 }
 
 function makeFileNode(name: string, filePath: string): FileTreeNode {

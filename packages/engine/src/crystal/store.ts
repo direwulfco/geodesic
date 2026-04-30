@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { Crystal } from '@geode/types';
+import type { Crystal } from '@geodesic/types';
 
-const DEFAULT_CRYSTALS_DIR = path.join(os.homedir(), '.geode', 'crystals');
+const DEFAULT_CRYSTALS_DIR = path.join(os.homedir(), '.geodesic', 'crystals');
 
 export function getCrystalsDir(configuredDir?: string): string {
   return configuredDir ?? DEFAULT_CRYSTALS_DIR;
@@ -71,7 +71,7 @@ export class CrystalStore {
       fs.renameSync(tmpPath, path.join(dir, 'crystal.json'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(`[geode] crystal write failed (non-fatal): ${msg}\n`);
+      process.stderr.write(`[geodesic] crystal write failed (non-fatal): ${msg}\n`);
     }
   }
 }

@@ -1,5 +1,5 @@
 import * as http from 'http';
-import type { GeodeConfig } from '@geode/types';
+import type { GeodesicConfig } from '@geodesic/types';
 import { loadConfig } from '../providers/index.js';
 import { loadProvider } from '../providers/index.js';
 import { CrystalStore, getCrystalsDir, pullCrystals } from '../crystal/index.js';
@@ -72,7 +72,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
           const config = loadConfig();
           json(res, 200, config);
         } catch {
-          json(res, 404, { error: 'No configuration found. Run: geode config set provider <name>' });
+          json(res, 404, { error: 'No configuration found. Run: geodesic config set provider <name>' });
         }
         return;
       }
@@ -137,7 +137,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
           return;
         }
 
-        let config: GeodeConfig;
+        let config: GeodesicConfig;
         try {
           config = loadConfig();
         } catch (err) {

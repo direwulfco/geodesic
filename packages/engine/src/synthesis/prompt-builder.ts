@@ -1,4 +1,4 @@
-import type { HarvestResult, Crystal, FileRecord } from '@geode/types';
+import type { HarvestResult, Crystal, FileRecord } from '@geodesic/types';
 
 // Token estimate: 1 token ≈ 3 chars (code is dense)
 export function estimatePromptTokens(text: string): number {
@@ -214,7 +214,7 @@ function formatAuth(harvest: HarvestResult): string {
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
 export function buildSystemPrompt(): string {
-  return `You are Geode, an AI-powered codebase topology analyst producing jaw-dropping, hyper-accurate architectural analysis.
+  return `You are Geodesic, an AI-powered codebase topology analyst producing jaw-dropping, hyper-accurate architectural analysis.
 
 PII COMPLIANCE: All harvest data has been scrubbed. Tokens like [PHI:PERSON_NAME:ref:a3f2:CONF:HIGH] are compliance placeholders — never include them in output. Reference them as "[PHI token]" when describing data flows.
 

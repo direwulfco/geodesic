@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { FileTreeNode, FileRecord, MonorepoPackage, PhaseProgressEvent } from '@geode/types';
+import type { FileTreeNode, FileRecord, MonorepoPackage, PhaseProgressEvent } from '@geodesic/types';
 
 export const EXCLUDED_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '__pycache__',

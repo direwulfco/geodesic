@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { intercept } from '../scrubber.js';
-import type { HarvestResult } from '@geode/types';
+import type { HarvestResult } from '@geodesic/types';
 
 function makeMinimalHarvest(): HarvestResult {
   return {

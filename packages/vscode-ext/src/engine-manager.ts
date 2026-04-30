@@ -58,7 +58,7 @@ export class EngineManager implements vscode.Disposable {
     const scriptPath = this.findEngineScript(context);
     if (!scriptPath) {
       const choice = await vscode.window.showErrorMessage(
-        'Geode engine not found. Install it via npm?',
+        'Geodesic engine not found. Install it via npm?',
         'Install Now',
         'Cancel',
       );
@@ -108,7 +108,7 @@ export class EngineManager implements vscode.Disposable {
         this._onStatusChange.fire('Engine stopped');
         if (code !== 0 && code !== null) {
           void vscode.window.showErrorMessage(
-            `Geode engine exited with code ${String(code)}. Click to restart.`,
+            `Geodesic engine exited with code ${String(code)}. Click to restart.`,
             'Restart',
           ).then(async choice => {
             if (choice === 'Restart') await this.start(context);
@@ -146,9 +146,9 @@ export class EngineManager implements vscode.Disposable {
 
   private async installEngine(): Promise<void> {
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Installing Geode engine…', cancellable: false },
+      { location: vscode.ProgressLocation.Notification, title: 'Installing Geodesic engine…', cancellable: false },
       () => new Promise<void>((resolve, reject) => {
-        const proc = spawn('npm', ['install', '-g', '@geode/cli'], { shell: true, stdio: 'inherit' });
+        const proc = spawn('npm', ['install', '-g', '@geodesic/cli'], { shell: true, stdio: 'inherit' });
         proc.on('exit', code => {
           if (code === 0) resolve();
           else reject(new Error(`npm install failed with code ${String(code)}`));

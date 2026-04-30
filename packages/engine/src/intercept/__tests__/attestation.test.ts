@@ -87,7 +87,7 @@ describe('AttestationChain', () => {
   });
 
   it('writes and reads a JSONL file', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geode-attest-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-attest-'));
     const outPath = path.join(tmpDir, 'attestation.jsonl');
 
     const chain = makeChain();

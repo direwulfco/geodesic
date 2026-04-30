@@ -1,16 +1,16 @@
 {
-  "name": "@geode/engine",
+  "name": "@geodesic/engine",
   "version": "0.1.0",
   "private": true,
-  "description": "Geode Engine — core analysis daemon. All analysis logic lives here.",
+  "description": "Geodesic Engine — core analysis daemon. All analysis logic lives here.",
   "license": "MIT",
-  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "homepage": "https://github.com/hyperpaced/geodesic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geode"
+    "url": "https://github.com/hyperpaced/geodesic"
   },
   "bugs": {
-    "url": "https://github.com/hyperpaced/geode/issues"
+    "url": "https://github.com/hyperpaced/geodesic/issues"
   },
   "author": "HyperPace <info@hyperpace.ai>",
   "main": "dist/index.js",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
-    "@geode/types": "*",
+    "@geodesic/types": "*",
     "@google/genai": "^1.50.1",
     "fast-xml-parser": "^4.5.0",
     "js-yaml": "^4.1.0",

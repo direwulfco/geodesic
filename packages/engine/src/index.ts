@@ -1,4 +1,4 @@
-export { GEODE_VERSION } from './version.js';
+export { GEODESIC_VERSION } from './version.js';
 
 export { harvest } from './harvester/index.js';
 export { intercept, verifyPurity, AttestationChain } from './intercept/index.js';
@@ -29,7 +29,7 @@ export {
   updateCrystalFitness,
 } from './crystal/index.js';
 export type { ExtractionResult, SyncResult } from './crystal/index.js';
-export type { HarvestResult, InterceptResult, SynthesisResult } from '@geode/types';
+export type { HarvestResult, InterceptResult, SynthesisResult } from '@geodesic/types';
 export { synthesize } from './synthesis/index.js';
 export type { SynthesisOptions } from './synthesis/index.js';
 export { createServer, startPipeline, getJob } from './server/index.js';

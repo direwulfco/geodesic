@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { SynthesisResult, UncertainDetection } from '@geode/types';
+import type { SynthesisResult, UncertainDetection } from '@geodesic/types';
 import type { ArtifactPaths } from '../artifacts/index.js';
 
 export type JobStatus =

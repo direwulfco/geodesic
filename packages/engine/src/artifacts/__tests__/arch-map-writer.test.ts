@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderArchitectureMap } from '../arch-map-writer.js';
 import { makeSynthesisResult, makeSkillFile } from './fixtures.js';
-import type { SynthesisResult } from '@geode/types';
+import type { SynthesisResult } from '@geodesic/types';
 
 describe('renderArchitectureMap', () => {
   it('includes repo name in the heading', () => {

@@ -144,7 +144,7 @@ function getResultsHtml(nonce: string, job: FullJob): string {
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Geode — ${escHtml(gr.repoName)}</title>
+<title>Geodesic — ${escHtml(gr.repoName)}</title>
 <style nonce="${nonce}">
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--vscode-font-family); font-size: 13px; color: var(--vscode-foreground); background: var(--vscode-editor-background); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -208,7 +208,7 @@ function getResultsHtml(nonce: string, job: FullJob): string {
 <div id="pane-skill" class="tab-content">${skillHtml}</div>
 <div id="pane-gap" class="tab-content">${gapHtml}</div>
 <div class="artifacts">
-  Artifacts: <a href="#" onclick="openArtifact('arch')">architecture-map.md</a> · <a href="#" onclick="openArtifact('json')">skill-file.geode.json</a> · <a href="#" onclick="openArtifact('md')">skill-file.geode.md</a> · <a href="#" onclick="openArtifact('gap')">gap-report.md</a>
+  Artifacts: <a href="#" onclick="openArtifact('arch')">architecture-map.md</a> · <a href="#" onclick="openArtifact('json')">skill-file.geodesic.json</a> · <a href="#" onclick="openArtifact('md')">skill-file.geodesic.md</a> · <a href="#" onclick="openArtifact('gap')">gap-report.md</a>
 </div>
 <script nonce="${nonce}">
 (function() {
@@ -265,8 +265,8 @@ export class ResultsPanel implements vscode.Disposable {
       this._panel.reveal(vscode.ViewColumn.One);
     } else {
       this._panel = vscode.window.createWebviewPanel(
-        'geode.results',
-        `Geode — ${repoName}`,
+        'geodesic.results',
+        `Geodesic — ${repoName}`,
         vscode.ViewColumn.One,
         { enableScripts: true, retainContextWhenHidden: true },
       );
@@ -286,7 +286,7 @@ export class ResultsPanel implements vscode.Disposable {
     }
 
     const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    this._panel.title = `Geode — ${repoName}`;
+    this._panel.title = `Geodesic — ${repoName}`;
     this._panel.webview.html = getResultsHtml(nonce, job);
     void context;
   }

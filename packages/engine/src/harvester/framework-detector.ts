@@ -1,4 +1,4 @@
-import type { DependencyManifest, FileTreeNode, FrameworkInventory } from '@geode/types';
+import type { DependencyManifest, FileTreeNode, FrameworkInventory } from '@geodesic/types';
 
 const JS_FRAMEWORK_MAP: Record<string, string> = {
   next: 'Next.js',

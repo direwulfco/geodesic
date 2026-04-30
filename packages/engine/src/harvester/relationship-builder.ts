@@ -6,7 +6,7 @@ import type {
   CircularDepCycle,
   MonorepoPackage,
   PhaseProgressEvent,
-} from '@geode/types';
+} from '@geodesic/types';
 import { normalizePath } from './file-tree.js';
 
 const HUB_FILE_IMPORT_THRESHOLD = 5;

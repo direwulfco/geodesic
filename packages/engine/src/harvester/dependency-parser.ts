@@ -3,7 +3,7 @@ import * as path from 'path';
 import yaml from 'js-yaml';
 import { parse as parseToml } from 'smol-toml';
 import { XMLParser } from 'fast-xml-parser';
-import type { DependencyEntry, DependencyManifest, FileTreeNode, ManifestType } from '@geode/types';
+import type { DependencyEntry, DependencyManifest, FileTreeNode, ManifestType } from '@geodesic/types';
 
 const MANIFEST_FILENAMES = new Set([
   'package.json', 'requirements.txt', 'go.mod',

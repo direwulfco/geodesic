@@ -1,14 +1,14 @@
-package dev.geode.plugin.toolwindow
+package dev.geodesic.plugin.toolwindow
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 
-class GeodeToolWindowFactory : ToolWindowFactory {
+class GeodesicToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val service = project.getService(GeodeToolWindowService::class.java)
-            ?: GeodeToolWindowService(project).also { /* fallback — should not happen */ }
+        val service = project.getService(GeodesicToolWindowService::class.java)
+            ?: GeodesicToolWindowService(project).also { /* fallback — should not happen */ }
 
         val sidebarPanel = SidebarPanel(project, service)
         service.registerSidebarPanel(sidebarPanel)

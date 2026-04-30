@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectLanguages, filterSourceFiles } from '../language-detector.js';
-import type { FileTreeNode } from '@geode/types';
+import type { FileTreeNode } from '@geodesic/types';
 
 function makeFile(name: string, filePath: string, language: string | null = null): FileTreeNode {
   return {

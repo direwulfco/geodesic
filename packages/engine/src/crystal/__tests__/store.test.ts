@@ -10,9 +10,9 @@ describe('getCrystalsDir', () => {
     expect(getCrystalsDir('/custom/path')).toBe('/custom/path');
   });
 
-  it('returns default ~/.geode/crystals when not provided', () => {
+  it('returns default ~/.geodesic/crystals when not provided', () => {
     const result = getCrystalsDir();
-    expect(result).toBe(path.join(os.homedir(), '.geode', 'crystals'));
+    expect(result).toBe(path.join(os.homedir(), '.geodesic', 'crystals'));
   });
 });
 
@@ -21,7 +21,7 @@ describe('CrystalStore', () => {
   let store: CrystalStore;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geode-store-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-store-test-'));
     store = new CrystalStore(tmpDir);
   });
 

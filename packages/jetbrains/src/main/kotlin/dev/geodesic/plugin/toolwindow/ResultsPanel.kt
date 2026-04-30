@@ -1,4 +1,4 @@
-package dev.geode.plugin.toolwindow
+package dev.geodesic.plugin.toolwindow
 
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
@@ -6,9 +6,9 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
-import dev.geode.plugin.engine.GapReport
-import dev.geode.plugin.engine.JobResult
-import dev.geode.plugin.engine.SynthesisData
+import dev.geodesic.plugin.engine.GapReport
+import dev.geodesic.plugin.engine.JobResult
+import dev.geodesic.plugin.engine.SynthesisData
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
@@ -186,7 +186,7 @@ class ResultsPanel private constructor(
     companion object {
         fun show(project: Project, job: JobResult) {
             SwingUtilities.invokeLater {
-                val frame = JFrame("Geode Results — ${job.result?.synthesis?.gapReport?.repoName ?: "Analysis"}")
+                val frame = JFrame("Geodesic Results — ${job.result?.synthesis?.gapReport?.repoName ?: "Analysis"}")
                 frame.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
                 frame.setSize(900, 650)
                 frame.contentPane = ResultsPanel(project, job)

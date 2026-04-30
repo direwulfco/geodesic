@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectTests } from '../test-detector.js';
-import type { DependencyManifest, FileTreeNode } from '@geode/types';
+import type { DependencyManifest, FileTreeNode } from '@geodesic/types';
 
 function makeFile(name: string, filePath: string): FileTreeNode {
   return {

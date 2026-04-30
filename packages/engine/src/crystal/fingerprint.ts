@@ -1,4 +1,4 @@
-import type { HarvestResult } from '@geode/types';
+import type { HarvestResult } from '@geodesic/types';
 
 const VERSION_RE = /\d+(\.\d+)*/g;
 

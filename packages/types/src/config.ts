@@ -17,7 +17,7 @@ export interface AdvancedConfig {
 
 export type ProviderName = 'anthropic' | 'openai' | 'gemini' | 'azure' | 'ollama';
 
-export interface GeodeConfig {
+export interface GeodesicConfig {
   provider: ProviderName;
   apiKey?: string;
   model?: string;

@@ -1,4 +1,4 @@
-import type { Crystal } from '@geode/types';
+import type { Crystal } from '@geodesic/types';
 
 export function makeCrystal(overrides: Partial<Crystal> = {}): Crystal {
   const base: Crystal = {

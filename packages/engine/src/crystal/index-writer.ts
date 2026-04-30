@@ -1,4 +1,4 @@
-import type { Crystal } from '@geode/types';
+import type { Crystal } from '@geodesic/types';
 
 export function generateCrystalIndex(crystals: Crystal[], updatedAt: string): string {
   const total = crystals.length;

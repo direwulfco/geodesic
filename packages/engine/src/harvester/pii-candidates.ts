@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { FileTreeNode, PiiCandidateLocation } from '@geode/types';
+import type { FileTreeNode, PiiCandidateLocation } from '@geodesic/types';
 
 /**
  * Static heuristics only — no AI, no network, no values stored.

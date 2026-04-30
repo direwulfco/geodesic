@@ -8,7 +8,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geode"
+    "url": "https://github.com/hyperpaced/geodesic"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -21,30 +21,30 @@
   "categories": ["AI", "Other"],
   "keywords": ["topology", "architecture", "analysis", "HIPAA", "AI", "codebase", "gap report", "security"],
   "bugs": {
-    "url": "https://github.com/hyperpaced/geode/issues"
+    "url": "https://github.com/hyperpaced/geodesic/issues"
   },
-  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "homepage": "https://github.com/hyperpaced/geodesic#readme",
   "activationEvents": ["onStartupFinished"],
   "main": "./dist/bundle.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "geode",
-          "title": "Geode",
+          "id": "geodesic",
+          "title": "Geodesic",
           "icon": "resources/icon.svg"
         }
       ]
     },
     "views": {
-      "geode": [
+      "geodesic": [
         {
-          "id": "geode.repos",
+          "id": "geodesic.repos",
           "name": "Repositories",
           "type": "webview"
         },
         {
-          "id": "geode.results",
+          "id": "geodesic.results",
           "name": "Results",
           "type": "webview"
         }
@@ -52,53 +52,53 @@
     },
     "commands": [
       {
-        "command": "geode.analyze",
+        "command": "geodesic.analyze",
         "title": "Analyze Repository",
-        "category": "Geode",
+        "category": "Geodesic",
         "icon": "$(play)"
       },
       {
-        "command": "geode.addRepo",
+        "command": "geodesic.addRepo",
         "title": "Add Repository",
-        "category": "Geode",
+        "category": "Geodesic",
         "icon": "$(add)"
       },
       {
-        "command": "geode.removeRepo",
+        "command": "geodesic.removeRepo",
         "title": "Remove Repository",
-        "category": "Geode",
+        "category": "Geodesic",
         "icon": "$(trash)"
       },
       {
-        "command": "geode.configureProvider",
+        "command": "geodesic.configureProvider",
         "title": "Configure AI Provider",
-        "category": "Geode",
+        "category": "Geodesic",
         "icon": "$(settings-gear)"
       },
       {
-        "command": "geode.syncCrystals",
+        "command": "geodesic.syncCrystals",
         "title": "Sync Crystal Store",
-        "category": "Geode",
+        "category": "Geodesic",
         "icon": "$(sync)"
       },
       {
-        "command": "geode.openAttestation",
+        "command": "geodesic.openAttestation",
         "title": "Open Attestation Chain",
-        "category": "Geode"
+        "category": "Geodesic"
       }
     ],
     "configuration": {
-      "title": "Geode",
+      "title": "Geodesic",
       "properties": {
-        "geode.outputDir": {
+        "geodesic.outputDir": {
           "type": "string",
-          "description": "Directory for analysis output. Defaults to a geode-findings/ folder created inside the analyzed repository.",
+          "description": "Directory for analysis output. Defaults to a geodesic-findings/ folder created inside the analyzed repository.",
           "scope": "resource"
         },
-        "geode.autoStartEngine": {
+        "geodesic.autoStartEngine": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically start the Geode engine when VS Code opens.",
+          "description": "Automatically start the Geodesic engine when VS Code opens.",
           "scope": "application"
         }
       }
@@ -116,8 +116,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@geode/types": "*",
-    "@geode/engine": "*"
+    "@geodesic/types": "*",
+    "@geodesic/engine": "*"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",

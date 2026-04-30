@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://geode.dev/schema/v1/config.json",
-  "title": "Geode Configuration",
-  "description": "Configuration file for the Geode Auto-Topology Agent engine.",
+  "$id": "https://geodesic.dev/schema/v1/config.json",
+  "title": "Geodesic Configuration",
+  "description": "Configuration file for the Geodesic Auto-Topology Agent engine.",
   "type": "object",
   "required": ["provider", "analystId"],
   "additionalProperties": false,
@@ -30,7 +30,7 @@
     "crystalStoreRepo": {
       "type": "string",
       "pattern": "^[\\w.-]+/[\\w.-]+$",
-      "description": "GitHub repo slug for the shared Crystal Store (e.g. 'myorg/geode-crystals')."
+      "description": "GitHub repo slug for the shared Crystal Store (e.g. 'myorg/geodesic-crystals')."
     },
     "crystalStoreToken": {
       "type": "string",
@@ -40,7 +40,7 @@
     "outputDir": {
       "type": "string",
       "minLength": 1,
-      "description": "Directory for analysis output. Defaults to geode-findings/ inside the analyzed repository."
+      "description": "Directory for analysis output. Defaults to geodesic-findings/ inside the analyzed repository."
     },
     "azure": {
       "type": "object",

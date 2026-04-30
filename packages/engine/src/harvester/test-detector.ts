@@ -1,4 +1,4 @@
-import type { DependencyManifest, FileTreeNode, TestInventory } from '@geode/types';
+import type { DependencyManifest, FileTreeNode, TestInventory } from '@geodesic/types';
 
 const TEST_FRAMEWORK_DEPS: Record<string, string> = {
   jest: 'Jest',

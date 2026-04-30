@@ -1,4 +1,4 @@
-package dev.geode.plugin.engine
+package dev.geodesic.plugin.engine
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.util.SystemInfo
@@ -29,7 +29,7 @@ class EngineManager {
         if (process != null) return true
 
         val scriptPath = findEngineScript() ?: run {
-            fireStatus("Engine not found — install @geode/cli via npm")
+            fireStatus("Engine not found — install @geodesic/cli via npm")
             return false
         }
 
@@ -118,8 +118,8 @@ class EngineManager {
                 val appData = System.getenv("APPDATA") ?: ""
                 add(Paths.get(appData, "npm", "node_modules", "@geode", "engine", "dist", "server", "start.js").toString())
             } else {
-                add("/usr/local/lib/node_modules/@geode/engine/dist/server/start.js")
-                add("/usr/lib/node_modules/@geode/engine/dist/server/start.js")
+                add("/usr/local/lib/node_modules/@geodesic/engine/dist/server/start.js")
+                add("/usr/lib/node_modules/@geodesic/engine/dist/server/start.js")
                 val home = System.getProperty("user.home") ?: ""
                 add(Paths.get(home, ".npm-global", "lib", "node_modules", "@geode", "engine", "dist", "server", "start.js").toString())
             }
@@ -134,7 +134,7 @@ class EngineManager {
         val nvmBase = File(home, ".nvm/versions/node")
         if (nvmBase.exists()) {
             nvmBase.listFiles()?.sortedDescending()?.forEach { nodeDir ->
-                val candidate = File(nodeDir, "lib/node_modules/@geode/engine/dist/server/start.js")
+                val candidate = File(nodeDir, "lib/node_modules/@geodesic/engine/dist/server/start.js")
                 if (candidate.exists()) return candidate.absolutePath
             }
         }

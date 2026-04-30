@@ -3,10 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { collectEnvVars } from '../env-var-collector.js';
-import type { FileTreeNode } from '@geode/types';
+import type { FileTreeNode } from '@geodesic/types';
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'geode-env-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-env-test-'));
 }
 
 function makeFile(name: string, filePath: string): FileTreeNode {

@@ -5,12 +5,12 @@ import type {
   CompletionOptions,
   CompletionResult,
   EmbeddingResult,
-  GeodeConfig,
+  GeodesicConfig,
   Message,
   ProviderHealthCheck,
   TokenCostEstimate,
-} from '@geode/types';
-import { ProviderError } from '@geode/types';
+} from '@geodesic/types';
+import { ProviderError } from '@geodesic/types';
 import { localEmbed, normalizeTo1536 } from './local-embeddings.js';
 
 // Public Azure OpenAI pricing mirrors base OpenAI pricing (per 1M tokens)
@@ -48,7 +48,7 @@ function pickPricing(deploymentName: string): { input: number; output: number } 
   return DEFAULT_PRICING;
 }
 
-export function createProvider(config: GeodeConfig): AIProvider {
+export function createProvider(config: GeodesicConfig): AIProvider {
   const azure = config.azure;
   if (!azure) {
     throw new ProviderError('azure', 'AUTH_FAILED', 'Azure config block is required', false);
@@ -166,7 +166,7 @@ export function createProvider(config: GeodeConfig): AIProvider {
   };
 }
 
-export function createEchoProvider(config: GeodeConfig): AIProvider {
+export function createEchoProvider(config: GeodesicConfig): AIProvider {
   // Azure has only one deployment per resource — reuse the same config
   return createProvider(config);
 }

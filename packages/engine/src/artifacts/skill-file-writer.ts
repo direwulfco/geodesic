@@ -1,4 +1,4 @@
-import type { SkillFileJson, PhiZone, SkillFileApiRoute } from '@geode/types';
+import type { SkillFileJson, PhiZone, SkillFileApiRoute } from '@geodesic/types';
 
 // ── JSON Serialization (camelCase → snake_case per spec schema) ───────────────
 
@@ -156,7 +156,7 @@ export function renderSkillFileMd(sf: SkillFileJson): string {
   const { meta, stack, topology, apis, databases, envVars, phiZones, devHooks, constraints, infra } = sf;
 
   // ── Header ───────────────────────────────────────────────────────────────────
-  lines.push(`# ${meta.repo} — Geode Skill File`);
+  lines.push(`# ${meta.repo} — Geodesic Skill File`);
   const crystalLabel = meta.crystalId ? `Crystal: ${meta.crystalId}` : 'cold start';
   lines.push(`Generated: ${meta.analyzedAt} | Provider: ${meta.provider} (${meta.model}) | ${crystalLabel}`);
   lines.push('');

@@ -1,4 +1,4 @@
-import type { HarvestResult, PhaseProgressEvent } from '@geode/types';
+import type { HarvestResult, PhaseProgressEvent } from '@geodesic/types';
 import { walkFileTree, flattenFileTree } from './file-tree.js';
 import { readAllFiles } from './file-reader.js';
 import { buildRelationships } from './relationship-builder.js';

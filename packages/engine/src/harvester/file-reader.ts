@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { FileRecord, FileExtraction, MonorepoPackage, PhaseProgressEvent } from '@geode/types';
+import type { FileRecord, FileExtraction, MonorepoPackage, PhaseProgressEvent } from '@geodesic/types';
 
 // Files larger than this treated as data files and characterize-only (not raw dump)
 const DATA_FILE_THRESHOLD_BYTES = 1_000_000;

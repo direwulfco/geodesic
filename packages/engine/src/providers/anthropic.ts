@@ -4,12 +4,12 @@ import type {
   CompletionOptions,
   CompletionResult,
   EmbeddingResult,
-  GeodeConfig,
+  GeodesicConfig,
   Message,
   ProviderHealthCheck,
   TokenCostEstimate,
-} from '@geode/types';
-import { ProviderError } from '@geode/types';
+} from '@geodesic/types';
+import { ProviderError } from '@geodesic/types';
 import { localEmbed } from './local-embeddings.js';
 
 // Public pricing (input/output per 1M tokens) — approximate, used for estimation only
@@ -49,7 +49,7 @@ async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>): Promise<T>
   throw lastErr;
 }
 
-export function createProvider(config: GeodeConfig): AIProvider {
+export function createProvider(config: GeodesicConfig): AIProvider {
   if (!config.apiKey) {
     throw new ProviderError('anthropic', 'AUTH_FAILED', 'Anthropic API key is required', false);
   }
@@ -137,7 +137,7 @@ export function createProvider(config: GeodeConfig): AIProvider {
   };
 }
 
-export function createEchoProvider(config: GeodeConfig): AIProvider {
+export function createEchoProvider(config: GeodesicConfig): AIProvider {
   return createProvider({ ...config, model: 'claude-haiku-4-5-20251001' });
 }
 

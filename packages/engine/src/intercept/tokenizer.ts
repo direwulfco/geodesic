@@ -1,4 +1,4 @@
-import type { PiiCategory, PiiType, ScrubConfidence } from '@geode/types';
+import type { PiiCategory, PiiType, ScrubConfidence } from '@geodesic/types';
 
 const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 

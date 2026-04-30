@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { AttestationEntry, PiiCategory, PiiType, ScrubConfidence } from '@geode/types';
-import type { HipaaIdentifierCategory } from '@geode/types';
-import { AttestationError } from '@geode/types';
+import type { AttestationEntry, PiiCategory, PiiType, ScrubConfidence } from '@geodesic/types';
+import type { HipaaIdentifierCategory } from '@geodesic/types';
+import { AttestationError } from '@geodesic/types';
 
 const GENESIS_HASH = '0'.repeat(64);
 

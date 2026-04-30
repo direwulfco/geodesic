@@ -1,4 +1,4 @@
-package dev.geode.plugin.settings
+package dev.geodesic.plugin.settings
 
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.ComboBox
@@ -7,16 +7,16 @@ import java.awt.GridBagLayout
 import java.awt.Insets
 import javax.swing.*
 
-class GeodeSettingsConfigurable : Configurable {
+class GeodesicSettingsConfigurable : Configurable {
 
     private val providerCombo = ComboBox(arrayOf("anthropic", "openai", "gemini", "azure", "ollama"))
     private val apiKeyField = JPasswordField()
     private val autoStartCheckbox = JCheckBox("Auto-start engine on IDE startup")
 
-    override fun getDisplayName(): String = "Geode"
+    override fun getDisplayName(): String = "Geodesic"
 
     override fun createComponent(): JComponent {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         providerCombo.selectedItem = settings.provider
         apiKeyField.text = settings.apiKey
         autoStartCheckbox.isSelected = settings.autoStartEngine
@@ -48,21 +48,21 @@ class GeodeSettingsConfigurable : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         return providerCombo.selectedItem != settings.provider
             || String(apiKeyField.password) != settings.apiKey
             || autoStartCheckbox.isSelected != settings.autoStartEngine
     }
 
     override fun apply() {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         settings.provider = providerCombo.selectedItem as String
         settings.apiKey = String(apiKeyField.password)
         settings.autoStartEngine = autoStartCheckbox.isSelected
     }
 
     override fun reset() {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         providerCombo.selectedItem = settings.provider
         apiKeyField.text = settings.apiKey
         autoStartCheckbox.isSelected = settings.autoStartEngine

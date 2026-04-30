@@ -2,13 +2,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import type { Crystal } from '@geode/types';
+import type { Crystal } from '@geodesic/types';
 import { generateCrystalIndex, buildFitnessLogEntry } from './index-writer.js';
 import { CrystalStore } from './store.js';
 
 const execFileAsync = promisify(execFile);
 
-const SYNC_STATE_FILE = '.geode-sync-state.json';
+const SYNC_STATE_FILE = '.geodesic-sync-state.json';
 const FITNESS_LOG_FILE = 'fitness_log.jsonl';
 const INDEX_FILE = 'CRYSTAL_INDEX.md';
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -113,7 +113,7 @@ export async function pullCrystals(crystalsDir: string, config?: CrystalSyncConf
       return {
         success: false,
         requiresAction: false,
-        message: 'No Crystal Store configured — running local-only. Set one with: geode config set crystal-store-repo <url>',
+        message: 'No Crystal Store configured — running local-only. Set one with: geodesic config set crystal-store-repo <url>',
       };
     }
     return cloneRepo(config.crystalStoreRepo, crystalsDir, config.crystalStoreToken);
@@ -193,7 +193,7 @@ export async function pushCrystals(
       return {
         success: false,
         requiresAction: true,
-        message: `Crystal sync has failed ${String(newFailures)} times. Run: geode crystals sync\nError: ${pushResult.stderr}`,
+        message: `Crystal sync has failed ${String(newFailures)} times. Run: geodesic crystals sync\nError: ${pushResult.stderr}`,
       };
     }
     return {

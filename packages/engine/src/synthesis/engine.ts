@@ -1,4 +1,4 @@
-import type { HarvestResult, Crystal, SynthesisResult, AIProvider } from '@geode/types';
+import type { HarvestResult, Crystal, SynthesisResult, AIProvider } from '@geodesic/types';
 import {
   buildSystemPrompt,
   buildDiscoveryPrompt,
@@ -164,11 +164,11 @@ async function runDiscovery(
     );
     const parsed = parseDiscovery(result.content);
     if (parsed.subsystems.length > 0) {
-      process.stderr.write(`[geode] discovery: ${String(parsed.subsystems.length)} subsystems\n`);
+      process.stderr.write(`[geodesic] discovery: ${String(parsed.subsystems.length)} subsystems\n`);
       return { ...parsed, tokensUsed: result.inputTokens + result.outputTokens };
     }
   } catch (err) {
-    process.stderr.write(`[geode] discovery failed (${err instanceof Error ? err.message : String(err)}) — single-subsystem fallback\n`);
+    process.stderr.write(`[geodesic] discovery failed (${err instanceof Error ? err.message : String(err)}) — single-subsystem fallback\n`);
   }
   return {
     subsystems: [{ name: 'Full Codebase', priority: 1, filePrefixes: [], focusAreas: [] }],
@@ -196,14 +196,14 @@ async function analyzeSubsystem(
         DEEP_DIVE_TIMEOUT_MS,
         `deep-dive: ${spec.name} (attempt ${String(attempt)})`,
       );
-      process.stderr.write(`[geode] deep-dive "${spec.name}": complete\n`);
+      process.stderr.write(`[geodesic] deep-dive "${spec.name}": complete\n`);
       return { name: spec.name, analysis: result.content, tokensUsed: result.inputTokens + result.outputTokens, status: 'deep' };
     } catch (err) {
-      process.stderr.write(`[geode] deep-dive "${spec.name}" attempt ${String(attempt)} failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.stderr.write(`[geodesic] deep-dive "${spec.name}" attempt ${String(attempt)} failed: ${err instanceof Error ? err.message : String(err)}\n`);
     }
   }
 
-  process.stderr.write(`[geode] deep-dive "${spec.name}": raw fallback\n`);
+  process.stderr.write(`[geodesic] deep-dive "${spec.name}": raw fallback\n`);
   return { name: spec.name, analysis: buildRawFallbackSummary(spec.name, slice), tokensUsed: 0, status: 'shallow' };
 }
 
@@ -217,10 +217,10 @@ async function runArtifacts(
   discoveryContext: string,
   provider: AIProvider,
   systemPrompt: string,
-): Promise<{ archMap: string; skillFile: import('@geode/types').SkillFileJson; gapReport: string; tokensUsed: number }> {
+): Promise<{ archMap: string; skillFile: import('@geodesic/types').SkillFileJson; gapReport: string; tokensUsed: number }> {
   const analyses = results.map(r => ({ name: r.name, analysis: r.analysis, status: r.status }));
 
-  process.stderr.write('[geode] integration: arch-map, skill-file narrative, gap-report in parallel…\n');
+  process.stderr.write('[geodesic] integration: arch-map, skill-file narrative, gap-report in parallel…\n');
 
   const largeCall  = (content: string, label: string) => withTimeout(
     provider.complete([{ role: 'user', content }], { maxTokens: ARTIFACT_MAX_TOKENS, temperature: 0.1, systemPrompt }),
@@ -244,9 +244,9 @@ async function runArtifacts(
   try {
     const cleaned = narrativeResult.content.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
     narrativePatch = JSON.parse(cleaned) as SkillFileNarrativePatch;
-    process.stderr.write('[geode] skill-file: narrative patch applied\n');
+    process.stderr.write('[geodesic] skill-file: narrative patch applied\n');
   } catch (err) {
-    process.stderr.write(`[geode] skill-file: narrative parse failed (${err instanceof Error ? err.message : String(err)}) — using empty patch\n`);
+    process.stderr.write(`[geodesic] skill-file: narrative parse failed (${err instanceof Error ? err.message : String(err)}) — using empty patch\n`);
   }
 
   const skillFile = assembleSkillFile(harvest, {
@@ -278,12 +278,12 @@ export async function synthesize(options: SynthesisOptions): Promise<SynthesisRe
   const systemPrompt = buildSystemPrompt();
 
   // Stage 1 — Discovery
-  process.stderr.write('[geode] synthesis 1/3: discovery…\n');
+  process.stderr.write('[geodesic] synthesis 1/3: discovery…\n');
   const discovery = await runDiscovery(harvest, echoProvider, systemPrompt);
   let totalTokens = discovery.tokensUsed;
 
   // Stage 2 — Deep Dives
-  process.stderr.write(`[geode] synthesis 2/3: deep dives (${String(discovery.subsystems.length)} subsystems)…\n`);
+  process.stderr.write(`[geodesic] synthesis 2/3: deep dives (${String(discovery.subsystems.length)} subsystems)…\n`);
   const deepResults = await pMap(
     discovery.subsystems,
     spec => analyzeSubsystem(spec, harvest, discovery.context, provider, systemPrompt),
@@ -295,11 +295,11 @@ export async function synthesize(options: SynthesisOptions): Promise<SynthesisRe
   if (shallowCount > 0) {
     const msg = `${String(shallowCount)} subsystem(s) fell back to raw harvest — deep analysis unavailable for those areas`;
     onWarning?.(msg);
-    process.stderr.write(`[geode] warn: ${msg}\n`);
+    process.stderr.write(`[geodesic] warn: ${msg}\n`);
   }
 
   // Stage 3 — Artifacts
-  process.stderr.write('[geode] synthesis 3/3: generating artifacts…\n');
+  process.stderr.write('[geodesic] synthesis 3/3: generating artifacts…\n');
   const artifacts = await runArtifacts(harvest, crystal, meta, deepResults, discovery.context, provider, systemPrompt);
   totalTokens += artifacts.tokensUsed;
 

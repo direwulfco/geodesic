@@ -1,4 +1,4 @@
-import type { FileTreeNode, LanguageCount, LanguageInventory } from '@geode/types';
+import type { FileTreeNode, LanguageCount, LanguageInventory } from '@geodesic/types';
 
 const SOURCE_LANGUAGES = new Set([
   'TypeScript', 'JavaScript', 'Python', 'Go', 'Rust',

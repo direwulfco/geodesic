@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Geode" width="880" />
+  <img src="assets/banner.png" alt="Geodesic" width="880" />
 </p>
 
 <p align="center">
-  Geode deep-scans any codebase in minutes and produces a complete architecture map, AI-ready skill file, and scored gap report — available as a native VS Code and JetBrains extension, with zero config, zero cloud upload, and a PII intercept layer that keeps your code yours.
+  Geodesic deep-scans any codebase in minutes and produces a complete architecture map, AI-ready skill file, and scored gap report — available as a native VS Code and JetBrains extension, with zero config, zero cloud upload, and a PII intercept layer that keeps your code yours.
 </p>
 
 <p align="center">
-  <a href="https://github.com/hyperpaced/geode/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geode/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geodesic?label=VS%20Code" alt="VS Code Marketplace" /></a>
 </p>
@@ -43,31 +43,31 @@ Crystal Extractor       — updates your Crystal Store with structural patterns
 
 ## Output artifacts
 
-All artifacts are written to `<repo>/geode-findings/` — a folder created inside the analyzed repository (gitignored automatically).
+All artifacts are written to `<repo>/geodesic-findings/` — a folder created inside the analyzed repository (gitignored automatically).
 
 | File | Description |
 |---|---|
 | `architecture-map.md` | Full topology: layers, APIs, databases, auth patterns, infrastructure |
-| `skill-file.geode.json` | Machine-readable context package for build agents and CI pipelines |
-| `skill-file.geode.md` | Human-readable version of the skill file |
+| `skill-file.geodesic.json` | Machine-readable context package for build agents and CI pipelines |
+| `skill-file.geodesic.md` | Human-readable version of the skill file |
 | `gap-report.md` | Scored across 7 dimensions, P0–P3 findings with exact file:line references |
 
 ---
 
 ## Crystal Store
 
-The Crystal Store is a learning system that accumulates structural patterns across analyses. It lives in **your own GitHub repository** — Geode reads and writes it directly. We never see it, touch it, or host it.
+The Crystal Store is a learning system that accumulates structural patterns across analyses. It lives in **your own GitHub repository** — Geodesic reads and writes it directly. We never see it, touch it, or host it.
 
 ```bash
-# Point Geode at your own repo
-geode config set crystal-store-repo https://github.com/your-org/your-crystals
-geode config set crystal-store-token ghp_your_token
+# Point Geodesic at your own repo
+geodesic config set crystal-store-repo https://github.com/your-org/your-crystals
+geodesic config set crystal-store-token ghp_your_token
 
 # First run clones it automatically
-geode crystals sync
+geodesic crystals sync
 ```
 
-Crystals contain zero source code and zero PII — only structural fingerprints and reasoning patterns. Teams running Geode across multiple projects see compounding quality improvements as the Crystal Store grows.
+Crystals contain zero source code and zero PII — only structural fingerprints and reasoning patterns. Teams running Geodesic across multiple projects see compounding quality improvements as the Crystal Store grows.
 
 ---
 
@@ -75,25 +75,25 @@ Crystals contain zero source code and zero PII — only structural fingerprints 
 
 ### VS Code, Cursor, Antigravity, VSCodium
 
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=geode-dev.geode) or [Open VSX Registry](https://open-vsx.org/extension/geode-dev/geode).
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic) or [Open VSX Registry](https://open-vsx.org/extension/HyperPace/geodesic).
 
 Or install from VSIX:
 ```bash
-code --install-extension geode-0.1.0.vsix
+code --install-extension geodesic-0.1.0.vsix
 ```
 
 The VSIX is self-contained — the analysis engine is bundled. No separate install required.
 
 ### JetBrains (IntelliJ, WebStorm, PyCharm, GoLand, Rider)
 
-Install from the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/geode-dev).
+Install from the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/geodesic-dev).
 
 Or install from disk: **Settings → Plugins → ⚙ → Install Plugin from Disk…**
 
 ### CLI
 
 ```bash
-npm install -g @geode/cli
+npm install -g @geodesic/cli
 ```
 
 ---
@@ -102,14 +102,14 @@ npm install -g @geode/cli
 
 ```bash
 # 1. Set your AI provider
-geode config set provider anthropic
-geode config set api-key sk-ant-…
+geodesic config set provider anthropic
+geodesic config set api-key sk-ant-…
 
 # 2. Analyze a repository
-geode analyze /path/to/your/repo
+geodesic analyze /path/to/your/repo
 
 # 3. View results
-open /path/to/your/repo/geode-findings/gap-report.md
+open /path/to/your/repo/geodesic-findings/gap-report.md
 ```
 
 ---
@@ -124,7 +124,7 @@ open /path/to/your/repo/geode-findings/gap-report.md
 | Azure OpenAI | Enterprise deployments |
 | Ollama | Fully local — no API key, no network calls |
 
-Geode is provider-agnostic by design. Swap providers with a single config change.
+Geodesic is provider-agnostic by design. Swap providers with a single config change.
 
 ---
 
@@ -134,7 +134,7 @@ Geode is provider-agnostic by design. Swap providers with a single config change
 - Detections are replaced with typed, reversible tokens — the AI never sees the original value
 - A tamper-evident, SHA-256-linked attestation chain is written for every scrubbed value
 - Uncertain detections (confidence < HIGH) are scrubbed and flagged for manual review
-- The attestation chain (`geode-attestation.jsonl`) is a compliance deliverable — never committed to git, never synced
+- The attestation chain (`geodesic-attestation.jsonl`) is a compliance deliverable — never committed to git, never synced
 
 ---
 
@@ -145,7 +145,7 @@ packages/
 ├── engine/        TypeScript — all analysis logic, local REST daemon
 ├── vscode-ext/    VS Code extension (.vsix) — thin shell over the engine API
 ├── jetbrains/     JetBrains plugin — thin shell over the engine API
-└── cli/           CLI wrapper — geode analyze
+└── cli/           CLI wrapper — geodesic analyze
 ```
 
 ---

@@ -1,4 +1,4 @@
-package dev.geode.plugin.toolwindow
+package dev.geodesic.plugin.toolwindow
 
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -9,9 +9,9 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBScrollPane
-import dev.geode.plugin.engine.JobProgress
-import dev.geode.plugin.settings.GeodeSettings
-import dev.geode.plugin.settings.RepoEntry
+import dev.geodesic.plugin.engine.JobProgress
+import dev.geodesic.plugin.settings.GeodesicSettings
+import dev.geodesic.plugin.settings.RepoEntry
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.GridBagConstraints
@@ -21,7 +21,7 @@ import javax.swing.*
 
 class SidebarPanel(
     private val project: Project,
-    private val service: GeodeToolWindowService
+    private val service: GeodesicToolWindowService
 ) : JPanel(BorderLayout()) {
 
     private val statusLabel = JBLabel("⚙ Starting engine…")
@@ -37,7 +37,7 @@ class SidebarPanel(
     private val runPanel = JPanel(BorderLayout())
 
     init {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         providerCombo.selectedItem = settings.provider
         apiKeyField.text = settings.apiKey
         settings.repos.forEach { repoListModel.addElement(it) }
@@ -160,16 +160,16 @@ class SidebarPanel(
     }
 
     private fun saveConfig() {
-        val settings = GeodeSettings.getInstance()
+        val settings = GeodesicSettings.getInstance()
         settings.provider = providerCombo.selectedItem as String
         settings.apiKey = String(apiKeyField.password)
-        Messages.showInfoMessage(project, "Provider saved: ${settings.provider}", "Geode")
+        Messages.showInfoMessage(project, "Provider saved: ${settings.provider}", "Geodesic")
     }
 
     private fun testConnection() {
         val client = service.engineClient
         if (client == null) {
-            Messages.showWarningDialog(project, "Engine not running yet.", "Geode")
+            Messages.showWarningDialog(project, "Engine not running yet.", "Geodesic")
             return
         }
         Thread {
@@ -177,14 +177,14 @@ class SidebarPanel(
                 val result = client.testConnection()
                 SwingUtilities.invokeLater {
                     if (result.healthy) {
-                        Messages.showInfoMessage(project, "Provider connected (${result.latencyMs}ms)", "Geode")
+                        Messages.showInfoMessage(project, "Provider connected (${result.latencyMs}ms)", "Geodesic")
                     } else {
-                        Messages.showErrorDialog(project, "Provider error: ${result.error ?: "unknown"}", "Geode")
+                        Messages.showErrorDialog(project, "Provider error: ${result.error ?: "unknown"}", "Geodesic")
                     }
                 }
             } catch (e: Exception) {
                 SwingUtilities.invokeLater {
-                    Messages.showErrorDialog(project, "Connection test failed: ${e.message}", "Geode")
+                    Messages.showErrorDialog(project, "Connection test failed: ${e.message}", "Geodesic")
                 }
             }
         }.also { it.isDaemon = true; it.start() }
@@ -198,7 +198,7 @@ class SidebarPanel(
         val label = chosen.name
         val entry = RepoEntry(label = label, path = path)
         repoListModel.addElement(entry)
-        GeodeSettings.getInstance().repos.add(entry)
+        GeodesicSettings.getInstance().repos.add(entry)
         refreshRunButtonState()
     }
 
@@ -207,7 +207,7 @@ class SidebarPanel(
         if (idx < 0) return
         val entry = repoListModel.getElementAt(idx)
         repoListModel.removeElementAt(idx)
-        GeodeSettings.getInstance().repos.removeIf { it.path == entry.path }
+        GeodesicSettings.getInstance().repos.removeIf { it.path == entry.path }
         refreshRunButtonState()
     }
 
@@ -220,7 +220,7 @@ class SidebarPanel(
     private fun runAnalysis() {
         val client = service.engineClient
         if (client == null) {
-            Messages.showWarningDialog(project, "Engine not running.", "Geode")
+            Messages.showWarningDialog(project, "Engine not running.", "Geodesic")
             return
         }
         val repos = (0 until repoListModel.size()).map { repoListModel.getElementAt(it) }
@@ -246,13 +246,13 @@ class SidebarPanel(
                             Messages.showInfoMessage(
                                 project,
                                 "Analysis complete — ${gr.repoName}: ${gr.overallScore}/100 (${gr.overallGrade})",
-                                "Geode"
+                                "Geodesic"
                             )
                         }
                     }
                 } catch (e: Exception) {
                     SwingUtilities.invokeLater {
-                        Messages.showErrorDialog(project, "Analysis failed: ${e.message}", "Geode")
+                        Messages.showErrorDialog(project, "Analysis failed: ${e.message}", "Geodesic")
                     }
                 }
             }
@@ -290,12 +290,12 @@ class SidebarPanel(
             try {
                 val result = client.syncCrystals()
                 SwingUtilities.invokeLater {
-                    Messages.showInfoMessage(project, result.message, "Geode")
+                    Messages.showInfoMessage(project, result.message, "Geodesic")
                     refreshState()
                 }
             } catch (e: Exception) {
                 SwingUtilities.invokeLater {
-                    Messages.showErrorDialog(project, "Sync failed: ${e.message}", "Geode")
+                    Messages.showErrorDialog(project, "Sync failed: ${e.message}", "Geodesic")
                 }
             }
         }.also { it.isDaemon = true; it.start() }

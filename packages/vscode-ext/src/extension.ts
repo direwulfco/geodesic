@@ -7,12 +7,12 @@ import { EngineClient } from './engine-client.js';
 import { ExtensionState } from './state.js';
 import { SidebarProvider } from './sidebar-provider.js';
 import { ResultsPanel } from './results-panel.js';
-import type { GeodeConfig } from '@geode/types';
+import type { GeodesicConfig } from '@geodesic/types';
 
-import { GEODE_VERSION } from '@geode/engine';
-export const EXTENSION_VERSION = GEODE_VERSION;
+import { GEODESIC_VERSION } from '@geodesic/engine';
+export const EXTENSION_VERSION = GEODESIC_VERSION;
 
-const CONFIG_PATH = path.join(os.homedir(), '.geode', 'config.json');
+const CONFIG_PATH = path.join(os.homedir(), '.geodesic', 'config.json');
 
 function saveConfig(provider: string, apiKey: string): void {
   const dir = path.dirname(CONFIG_PATH);
@@ -36,7 +36,7 @@ function saveConfig(provider: string, apiKey: string): void {
 function readConfigInfo(): { provider: string; hasApiKey: boolean } | null {
   try {
     if (!fs.existsSync(CONFIG_PATH)) return null;
-    const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Partial<GeodeConfig>;
+    const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Partial<GeodesicConfig>;
     if (!raw.provider) return null;
     return { provider: raw.provider, hasApiKey: !!raw.apiKey };
   } catch {
@@ -67,23 +67,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register sidebar webview view
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('geode.repos', sidebarProvider, {
+    vscode.window.registerWebviewViewProvider('geodesic.repos', sidebarProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
   );
 
   // Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('geode.analyze', () => {
+    vscode.commands.registerCommand('geodesic.analyze', () => {
       const repos = state.getRepos();
       if (repos.length === 0) {
-        void vscode.window.showWarningMessage('No repositories added. Use Geode sidebar to add a repository first.');
+        void vscode.window.showWarningMessage('No repositories added. Use Geodesic sidebar to add a repository first.');
         return;
       }
       runAnalysis(repos.map(r => r.path));
     }),
 
-    vscode.commands.registerCommand('geode.addRepo', async () => {
+    vscode.commands.registerCommand('geodesic.addRepo', async () => {
       const uris = await vscode.window.showOpenDialog({
         canSelectFolders: true,
         canSelectFiles: false,
@@ -96,7 +96,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    vscode.commands.registerCommand('geode.removeRepo', async () => {
+    vscode.commands.registerCommand('geodesic.removeRepo', async () => {
       const repos = state.getRepos();
       if (repos.length === 0) {
         void vscode.window.showInformationMessage('No repositories to remove.');
@@ -112,7 +112,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    vscode.commands.registerCommand('geode.configureProvider', async () => {
+    vscode.commands.registerCommand('geodesic.configureProvider', async () => {
       const provider = await vscode.window.showQuickPick(
         ['anthropic', 'openai', 'gemini', 'azure', 'ollama'],
         { placeHolder: 'Select AI provider' },
@@ -131,7 +131,7 @@ export function activate(context: vscode.ExtensionContext): void {
       await sidebarProvider.pushState();
     }),
 
-    vscode.commands.registerCommand('geode.syncCrystals', async () => {
+    vscode.commands.registerCommand('geodesic.syncCrystals', async () => {
       const client = getClient();
       if (!client) {
         void vscode.window.showWarningMessage('Engine not running.');
@@ -146,8 +146,8 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    vscode.commands.registerCommand('geode.openAttestation', () => {
-      const attestationPath = path.join(os.homedir(), 'geode-attestation.jsonl');
+    vscode.commands.registerCommand('geodesic.openAttestation', () => {
+      const attestationPath = path.join(os.homedir(), 'geodesic-attestation.jsonl');
       if (!fs.existsSync(attestationPath)) {
         void vscode.window.showInformationMessage('No attestation chain found. Run an analysis first.');
         return;
@@ -164,7 +164,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // Start engine on activation
-  const autoStart = vscode.workspace.getConfiguration('geode').get<boolean>('autoStartEngine', true);
+  const autoStart = vscode.workspace.getConfiguration('geodesic').get<boolean>('autoStartEngine', true);
   if (autoStart) {
     void engineManager.start(context).then(() => {
       if (engineManager.port) {
@@ -173,14 +173,14 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }).catch((err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`Geode engine failed to start: ${msg}`);
+      void vscode.window.showErrorMessage(`Geodesic engine failed to start: ${msg}`);
     });
   }
 
   function runAnalysis(repoPaths: string[]): void {
     const client = getClient();
     if (!client) {
-      void vscode.window.showErrorMessage('Geode engine is not running. Please wait for it to start.');
+      void vscode.window.showErrorMessage('Geodesic engine is not running. Please wait for it to start.');
       return;
     }
 
@@ -207,7 +207,7 @@ export function activate(context: vscode.ExtensionContext): void {
       resultsPanel.open(job, context);
       const gr = job.result.synthesis.gapReport;
       void vscode.window.showInformationMessage(
-        `Geode analysis complete — ${gr.repoName}: ${String(gr.overallScore)}/100 (${gr.overallGrade})`,
+        `Geodesic analysis complete — ${gr.repoName}: ${String(gr.overallScore)}/100 (${gr.overallGrade})`,
         'View Results',
       ).then(choice => {
         if (choice === 'View Results') {

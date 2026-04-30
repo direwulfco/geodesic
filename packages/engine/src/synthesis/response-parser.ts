@@ -1,4 +1,4 @@
-import type { SynthesisResult, SkillFileJson, GapReport } from '@geode/types';
+import type { SynthesisResult, SkillFileJson, GapReport } from '@geodesic/types';
 
 function assertGapReport(val: unknown): asserts val is GapReport {
   if (typeof val !== 'object' || val === null)

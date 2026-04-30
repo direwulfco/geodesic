@@ -5,7 +5,7 @@ import type {
   FindingSeverity,
   UncertainDetectionReport,
   LetterGrade,
-} from '@geode/types';
+} from '@geodesic/types';
 
 function gradeLabel(grade: LetterGrade): string {
   const labels: Record<LetterGrade, string> = {
@@ -84,7 +84,7 @@ export function renderGapReport(report: GapReport): string {
   const lines: string[] = [];
 
   // ── Header ───────────────────────────────────────────────────────────────────
-  lines.push(`# ${report.repoName} — Geode Gap Report`);
+  lines.push(`# ${report.repoName} — Geodesic Gap Report`);
   lines.push(`Generated: ${report.analyzedAt}`);
   lines.push('');
 
@@ -112,7 +112,7 @@ export function renderGapReport(report: GapReport): string {
     lines.push('## ⚠ Uncertain PII Detections — Human Review Required');
     lines.push('');
     lines.push(`${count} detection${report.uncertainDetections.length !== 1 ? 's' : ''} require human review before this report can be considered complete.`);
-    lines.push('Review each location and clear or confirm using: `geode review mark-reviewed --ref <entry_id>`');
+    lines.push('Review each location and clear or confirm using: `geodesic review mark-reviewed --ref <entry_id>`');
     lines.push('');
     report.uncertainDetections.forEach((det, i) => {
       lines.push(...renderUncertainDetection(det, i));

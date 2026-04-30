@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { Crystal, CommonGap, SynthesisResult } from '@geode/types';
+import type { Crystal, CommonGap, SynthesisResult } from '@geodesic/types';
 import { verifyPurity } from '../intercept/index.js';
 
 // ─── LAW 5 Content Fence ──────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ const REPO_STRUCTURAL_PATTERNS = [
   /\bsrc\/\w/,
   /\bpackages\/\w/,
   /\bapp\/\w/,
-  /\b\w+\.(ts|js|py|go|rs|java|rb|php|cs|swift)\b/i,
+  /[/\\]\w[\w.-]*\.(ts|js|py|go|rs|java|rb|php|cs|swift)\b/i, // path-prefixed filenames only — not framework names like Node.js
 ];
 
 function containsRepoStructuralData(text: string): boolean {
@@ -236,7 +236,8 @@ export function extractCrystal(options: ExtractionOptions): ExtractionResult {
     commonGaps,
   };
 
-  const crystal: Crystal = { ...crystalWithoutPrompt, bootstrapPrompt: buildBootstrapPrompt(crystalWithoutPrompt) };
+  const bootstrapPrompt = sanitizeForCrystal(buildBootstrapPrompt(crystalWithoutPrompt));
+  const crystal: Crystal = { ...crystalWithoutPrompt, bootstrapPrompt };
 
   // Law 5: two-layer purity check before any write
   // Layer 1: PII/PHI check — pass the object (not JSON string) to avoid escape-sequence false positives

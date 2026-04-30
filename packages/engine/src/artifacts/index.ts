@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { SynthesisResult } from '@geode/types';
+import type { SynthesisResult } from '@geodesic/types';
 import { renderArchitectureMap } from './arch-map-writer.js';
 import { renderSkillFileJson, renderSkillFileMd } from './skill-file-writer.js';
 import { renderGapReport } from './gap-report-writer.js';
@@ -28,8 +28,8 @@ export function writeArtifacts(synthesis: SynthesisResult, outputDir: string): A
 
   const files: Array<readonly [finalPath: string, content: string]> = [
     [path.join(outputDir, 'architecture-map.md'),    renderArchitectureMap(synthesis)],
-    [path.join(outputDir, 'skill-file.geode.json'),  renderSkillFileJson(synthesis.skillFile)],
-    [path.join(outputDir, 'skill-file.geode.md'),    renderSkillFileMd(synthesis.skillFile)],
+    [path.join(outputDir, 'skill-file.geodesic.json'),  renderSkillFileJson(synthesis.skillFile)],
+    [path.join(outputDir, 'skill-file.geodesic.md'),    renderSkillFileMd(synthesis.skillFile)],
     [path.join(outputDir, 'gap-report.md'),          renderGapReport(synthesis.gapReport)],
   ] as const;
 

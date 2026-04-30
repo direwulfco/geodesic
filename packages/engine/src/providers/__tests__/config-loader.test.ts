@@ -14,7 +14,7 @@ describe('loadConfig', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geode-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-test-'));
   });
 
   afterEach(() => {
@@ -40,18 +40,18 @@ describe('loadConfig', () => {
   });
 
   it('throws with setup instructions when no config exists', () => {
-    // Pass tmpDir as homeDir so we don't fall back to the real ~/.geode/config.json
+    // Pass tmpDir as homeDir so we don't fall back to the real ~/.geodesic/config.json
     const originalCwd = process.cwd();
     process.chdir(tmpDir);
     try {
-      expect(() => loadConfig(undefined, tmpDir)).toThrow(/geode config set/i);
+      expect(() => loadConfig(undefined, tmpDir)).toThrow(/geodesic config set/i);
     } finally {
       process.chdir(originalCwd);
     }
   });
 
-  it('loads from .geode/config.json in CWD', () => {
-    const geodeDir = path.join(tmpDir, '.geode');
+  it('loads from .geodesic/config.json in CWD', () => {
+    const geodeDir = path.join(tmpDir, '.geodesic');
     fs.mkdirSync(geodeDir);
     fs.writeFileSync(path.join(geodeDir, 'config.json'), JSON.stringify(VALID_CONFIG));
 

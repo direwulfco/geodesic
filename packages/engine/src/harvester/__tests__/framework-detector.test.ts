@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectFrameworks } from '../framework-detector.js';
-import type { DependencyManifest, FileTreeNode } from '@geode/types';
+import type { DependencyManifest, FileTreeNode } from '@geodesic/types';
 
 function makeManifest(deps: string[]): DependencyManifest {
   return {

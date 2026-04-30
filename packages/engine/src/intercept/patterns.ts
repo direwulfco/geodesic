@@ -1,5 +1,5 @@
-import type { PiiCategory, PiiType, ScrubConfidence } from '@geode/types';
-import type { HipaaIdentifierCategory } from '@geode/types';
+import type { PiiCategory, PiiType, ScrubConfidence } from '@geodesic/types';
+import type { HipaaIdentifierCategory } from '@geodesic/types';
 
 export interface PatternDef {
   readonly id: string;

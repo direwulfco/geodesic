@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import type { HarvestResult, GeodeConfig, PhaseProgressEvent } from '@geode/types';
+import type { HarvestResult, GeodesicConfig, PhaseProgressEvent } from '@geodesic/types';
 import { harvest } from '../harvester/index.js';
 import { intercept } from '../intercept/index.js';
 import { loadProvider, loadEchoProvider } from '../providers/index.js';
@@ -16,7 +16,7 @@ import {
   pushCrystals,
 } from '../crystal/index.js';
 import { synthesize, OVERALL_ANALYSIS_TIMEOUT_MS } from '../synthesis/index.js';
-import { GEODE_VERSION } from '../version.js';
+import { GEODESIC_VERSION } from '../version.js';
 import {
   createJob,
   updateJobProgress,
@@ -31,7 +31,7 @@ function writeErrorLog(outputDir: string, stage: string, err: unknown): void {
     fs.mkdirSync(outputDir, { recursive: true });
     const entry = [
       `timestamp: ${new Date().toISOString()}`,
-      `geode: ${GEODE_VERSION}`,
+      `geodesic: ${GEODESIC_VERSION}`,
       `node: ${process.version}`,
       `platform: ${process.platform}`,
       `stage: ${stage}`,
@@ -39,7 +39,7 @@ function writeErrorLog(outputDir: string, stage: string, err: unknown): void {
       err instanceof Error && err.stack ? `stack:\n${err.stack}` : '',
       '---',
     ].filter(Boolean).join('\n');
-    fs.appendFileSync(path.join(outputDir, 'geode-error.log'), entry + '\n\n', 'utf8');
+    fs.appendFileSync(path.join(outputDir, 'geodesic-error.log'), entry + '\n\n', 'utf8');
   } catch { /* non-fatal */ }
 }
 
@@ -50,20 +50,20 @@ function writeAttestationChain(attestationPath: string, entries: unknown[]): voi
     const lines = entries.map(e => JSON.stringify(e)).join('\n') + '\n';
     fs.writeFileSync(attestationPath, lines, 'utf8');
   } catch (err) {
-    process.stderr.write(`[geode] warn: could not write attestation chain: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(`[geodesic] warn: could not write attestation chain: ${err instanceof Error ? err.message : String(err)}\n`);
   }
 }
 
 export interface PipelineOptions {
   repoPath: string;
-  config: GeodeConfig;
+  config: GeodesicConfig;
   outputDir?: string;
 }
 
 export function startPipeline(opts: PipelineOptions): AnalysisJob {
   const job = createJob(opts.repoPath);
   const hardCapTimer = setTimeout(() => {
-    failJob(job.id, `Analysis exceeded ${String(Math.round(OVERALL_ANALYSIS_TIMEOUT_MS / 60_000))} min hard cap — job aborted. See geode-error.log.`);
+    failJob(job.id, `Analysis exceeded ${String(Math.round(OVERALL_ANALYSIS_TIMEOUT_MS / 60_000))} min hard cap — job aborted. See geodesic-error.log.`);
   }, OVERALL_ANALYSIS_TIMEOUT_MS);
   void runPipeline(job.id, opts).finally(() => { clearTimeout(hardCapTimer); });
   return job;
@@ -74,16 +74,16 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
   const repoName = path.basename(repoPath);
   const outputDir = opts.outputDir
     ?? config.outputDir
-    ?? path.join(repoPath, 'geode-findings');
+    ?? path.join(repoPath, 'geodesic-findings');
 
-  // Protect geode-findings from being accidentally committed
+  // Protect geodesic-findings from being accidentally committed
   try {
     fs.mkdirSync(outputDir, { recursive: true });
     const gitignorePath = path.join(outputDir, '.gitignore');
     if (!fs.existsSync(gitignorePath)) {
       fs.writeFileSync(
         gitignorePath,
-        '# Geode analysis artifacts — machine-generated, do not commit\n*\n!.gitignore\n',
+        '# Geodesic analysis artifacts — machine-generated, do not commit\n*\n!.gitignore\n',
         'utf8',
       );
     }
@@ -98,7 +98,7 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
         updateJobProgress(jobId, { stage: event.message });
       } else if (event.type === 'discovery_finding') {
         updateJobProgress(jobId, { stage: event.message });
-        process.stderr.write(`[geode] ${event.message}\n`);
+        process.stderr.write(`[geodesic] ${event.message}\n`);
       } else if (event.type === 'file_error') {
         writeErrorLog(outputDir, 'harvest-file-error', new Error(event.message));
       } else if (event.type === 'warning') {
@@ -119,7 +119,7 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
 
     // Write compliance artifact immediately — stored outside the analyzed repo, never committed
     const attestationTs = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-    const attestationDir = path.join(os.homedir(), '.geode', 'attestations');
+    const attestationDir = path.join(os.homedir(), '.geodesic', 'attestations');
     const attestationPath = path.join(attestationDir, `${repoName}-${attestationTs}.jsonl`);
     writeAttestationChain(attestationPath, interceptResult.attestationEntries);
 
@@ -139,7 +139,7 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
     if (!(config.advanced?.noCrystalSync)) {
       const syncResult = await pullCrystals(crystalsDir, config);
       if (!syncResult.success) {
-        process.stderr.write(`[geode] crystal sync: ${syncResult.message}\n`);
+        process.stderr.write(`[geodesic] crystal sync: ${syncResult.message}\n`);
       }
     }
 
@@ -192,7 +192,7 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
       if (!(config.advanced?.noCrystalSync)) {
         const pushResult = await pushCrystals(crystalsDir, extraction.crystal, config);
         if (!pushResult.success) {
-          process.stderr.write(`[geode] crystal push: ${pushResult.message}\n`);
+          process.stderr.write(`[geodesic] crystal push: ${pushResult.message}\n`);
         }
       }
     }
@@ -213,6 +213,6 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     writeErrorLog(outputDir, 'pipeline', err);
-    failJob(jobId, `${message} — see geode-error.log in output directory`);
+    failJob(jobId, `${message} — see geodesic-error.log in output directory`);
   }
 }

@@ -6,12 +6,12 @@ import {
   computeOverallScore,
 } from '../gap-report-writer.js';
 import { makeGapReport } from './fixtures.js';
-import type { DimensionScore } from '@geode/types';
+import type { DimensionScore } from '@geodesic/types';
 
 describe('renderGapReport', () => {
   it('includes repo name in heading', () => {
     const output = renderGapReport(makeGapReport());
-    expect(output).toContain('my-app — Geode Gap Report');
+    expect(output).toContain('my-app — Geodesic Gap Report');
   });
 
   it('includes overall score and grade', () => {

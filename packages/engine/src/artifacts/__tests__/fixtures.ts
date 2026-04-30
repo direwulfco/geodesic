@@ -1,8 +1,8 @@
-import type { SynthesisResult, SkillFileJson, GapReport } from '@geode/types';
+import type { SynthesisResult, SkillFileJson, GapReport } from '@geodesic/types';
 
 export function makeSkillFile(overrides: Partial<SkillFileJson> = {}): SkillFileJson {
   const base: SkillFileJson = {
-    '$schema': 'https://geode.dev/schema/v1/skill-file.json',
+    '$schema': 'https://geodesic.dev/schema/v1/skill-file.json',
     meta: {
       geodeVersion: '0.1.0',
       schemaVersion: '1',

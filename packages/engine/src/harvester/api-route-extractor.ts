@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ApiRoute, DependencyManifest, FileTreeNode, FrameworkInventory, HttpMethod } from '@geode/types';
+import type { ApiRoute, DependencyManifest, FileTreeNode, FrameworkInventory, HttpMethod } from '@geodesic/types';
 
 const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'ALL'];
 

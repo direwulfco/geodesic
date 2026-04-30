@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { EnvVarEntry, FileTreeNode } from '@geode/types';
+import type { EnvVarEntry, FileTreeNode } from '@geodesic/types';
 
 const SECRET_PATTERNS = [
   /secret/i, /password/i, /passwd/i, /token/i, /key/i, /api_key/i, /apikey/i,

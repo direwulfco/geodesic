@@ -1,20 +1,21 @@
 {
-  "name": "@geode/cli",
+  "name": "@geodesic/cli",
   "version": "0.1.0",
   "private": false,
-  "description": "Geode CLI — run topology analysis from the terminal or CI pipelines.",
+  "description": "Geodesic CLI — run topology analysis from the terminal or CI pipelines.",
   "license": "MIT",
-  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "homepage": "https://github.com/hyperpaced/geodesic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geode"
+    "url": "https://github.com/hyperpaced/geodesic"
   },
   "bugs": {
-    "url": "https://github.com/hyperpaced/geode/issues"
+    "url": "https://github.com/hyperpaced/geodesic/issues"
   },
   "author": "HyperPace <info@hyperpace.ai>",
   "bin": {
-    "geode": "./dist/index.js"
+    "geodesic": "./dist/index.js",
+    "geo": "./dist/index.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,8 +25,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@geode/engine": "*",
-    "@geode/types": "*",
+    "@geodesic/engine": "*",
+    "@geodesic/types": "*",
     "commander": "^12.1.0"
   },
   "devDependencies": {

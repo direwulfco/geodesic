@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
-import { CrystalStore, getCrystalsDir, generateCrystalIndex, pullCrystals } from '@geode/engine';
-import { loadConfig } from '@geode/engine';
+import { CrystalStore, getCrystalsDir, generateCrystalIndex, pullCrystals } from '@geodesic/engine';
+import { loadConfig } from '@geodesic/engine';
 
 /* eslint-disable no-console */
 
@@ -53,13 +53,13 @@ export function registerCrystalsCommand(program: Command): void {
     .description('Sync Crystal Store with your configured repository')
     .action(async () => {
       const store = getStore();
-      let config: import('@geode/types').GeodeConfig | undefined;
+      let config: import('@geodesic/types').GeodesicConfig | undefined;
       try { config = loadConfig(); } catch { /* no config — sync will run local-only */ }
       const result = await pullCrystals(store.dirPath, config);
       if (result.success) {
-        console.log('[geode] ' + result.message);
+        console.log('[geodesic] ' + result.message);
       } else {
-        console.error('[geode] ' + result.message);
+        console.error('[geodesic] ' + result.message);
         if (result.requiresAction) process.exit(1);
       }
     });
@@ -71,8 +71,8 @@ export function registerCrystalsCommand(program: Command): void {
       const store = getStore();
       const crystal = store.get(fingerprint);
       if (!crystal) {
-        console.error(`[geode] No crystal found for fingerprint: ${fingerprint}`);
-        console.error('[geode] Run: geode crystals list  to see available crystals');
+        console.error(`[geodesic] No crystal found for fingerprint: ${fingerprint}`);
+        console.error('[geodesic] Run: geodesic crystals list  to see available crystals');
         process.exit(1);
         return;
       }

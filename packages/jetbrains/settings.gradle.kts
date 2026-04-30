@@ -1,1 +1,1 @@
-rootProject.name = "geode-jetbrains"
+rootProject.name = "geodesic-jetbrains"

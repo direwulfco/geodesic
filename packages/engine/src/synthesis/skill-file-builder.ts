@@ -4,8 +4,8 @@ import type {
   SkillFileApiRoute,
   PhiZone,
   SkillFileEnvVars,
-} from '@geode/types';
-import { GEODE_VERSION } from '../version.js';
+} from '@geodesic/types';
+import { GEODESIC_VERSION } from '../version.js';
 
 // ─── Narrative Patch ──────────────────────────────────────────────────────────
 // The only fields the LLM needs to fill — everything else comes from harvest.
@@ -190,9 +190,9 @@ export function assembleSkillFile(
   const { cicd, databases, framework, languages } = harvest;
 
   return {
-    $schema: 'https://geode.dev/schema/v1/skill-file.json',
+    $schema: 'https://geodesic.dev/schema/v1/skill-file.json',
     meta: {
-      geodeVersion: GEODE_VERSION,
+      geodeVersion: GEODESIC_VERSION,
       schemaVersion: '1',
       analyzedAt: new Date().toISOString(),
       ...meta,

@@ -3,12 +3,12 @@ import type {
   CompletionOptions,
   CompletionResult,
   EmbeddingResult,
-  GeodeConfig,
+  GeodesicConfig,
   Message,
   ProviderHealthCheck,
   TokenCostEstimate,
-} from '@geode/types';
-import { ProviderError } from '@geode/types';
+} from '@geodesic/types';
+import { ProviderError } from '@geodesic/types';
 import { localEmbed, normalizeTo1536 } from './local-embeddings.js';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
@@ -31,7 +31,7 @@ interface OllamaTagsResponse {
   models: Array<{ name: string }>;
 }
 
-export function createProvider(config: GeodeConfig): AIProvider {
+export function createProvider(config: GeodesicConfig): AIProvider {
   const model = config.model ?? 'llama3.3';
   const baseUrl = (config.ollama?.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
 
@@ -206,7 +206,7 @@ export function createProvider(config: GeodeConfig): AIProvider {
   };
 }
 
-export function createEchoProvider(config: GeodeConfig): AIProvider {
+export function createEchoProvider(config: GeodesicConfig): AIProvider {
   // Ollama has no cost distinction — reuse the same model
   return createProvider(config);
 }

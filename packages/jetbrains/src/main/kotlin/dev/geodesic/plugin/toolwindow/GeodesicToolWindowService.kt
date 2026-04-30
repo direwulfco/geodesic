@@ -1,12 +1,12 @@
-package dev.geode.plugin.toolwindow
+package dev.geodesic.plugin.toolwindow
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import dev.geode.plugin.engine.EngineClient
-import dev.geode.plugin.engine.EngineManager
+import dev.geodesic.plugin.engine.EngineClient
+import dev.geodesic.plugin.engine.EngineManager
 
 @Service(Service.Level.PROJECT)
-class GeodeToolWindowService(private val project: Project) {
+class GeodesicToolWindowService(private val project: Project) {
     val engineManager = EngineManager()
     var engineClient: EngineClient? = null
         private set

@@ -1,24 +1,24 @@
-package dev.geode.plugin.actions
+package dev.geodesic.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.wm.ToolWindowManager
-import dev.geode.plugin.toolwindow.GeodeToolWindowService
+import dev.geodesic.plugin.toolwindow.GeodesicToolWindowService
 
 class AnalyzeAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        // Open the Geode tool window
+        // Open the Geodesic tool window
         val toolWindowManager = ToolWindowManager.getInstance(project)
-        val toolWindow = toolWindowManager.getToolWindow("Geode")
+        val toolWindow = toolWindowManager.getToolWindow("Geodesic")
         if (toolWindow != null) {
             toolWindow.show()
             return
         }
 
-        Messages.showInfoMessage(project, "Open the Geode tool window to run an analysis.", "Geode")
+        Messages.showInfoMessage(project, "Open the Geodesic tool window to run an analysis.", "Geodesic")
     }
 
     override fun update(e: AnActionEvent) {

@@ -5,7 +5,7 @@ export interface RepoEntry {
   label: string;
 }
 
-const REPOS_KEY = 'geode.repos';
+const REPOS_KEY = 'geodesic.repos';
 
 export class ExtensionState implements vscode.Disposable {
   private readonly _onDidChange = new vscode.EventEmitter<void>();

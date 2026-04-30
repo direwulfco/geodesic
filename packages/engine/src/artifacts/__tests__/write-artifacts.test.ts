@@ -9,7 +9,7 @@ describe('writeArtifacts', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geode-artifacts-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'geodesic-artifacts-'));
   });
 
   afterEach(() => {
@@ -26,8 +26,8 @@ describe('writeArtifacts', () => {
     const outputDir = path.join(tmpDir, 'out');
     const paths = writeArtifacts(makeSynthesisResult(), outputDir);
     expect(paths.architectureMap).toContain('architecture-map.md');
-    expect(paths.skillFileJson).toContain('skill-file.geode.json');
-    expect(paths.skillFileMd).toContain('skill-file.geode.md');
+    expect(paths.skillFileJson).toContain('skill-file.geodesic.json');
+    expect(paths.skillFileMd).toContain('skill-file.geodesic.md');
     expect(paths.gapReport).toContain('gap-report.md');
   });
 
@@ -40,12 +40,12 @@ describe('writeArtifacts', () => {
     expect(fs.existsSync(paths.gapReport)).toBe(true);
   });
 
-  it('skill-file.geode.json is valid JSON with $schema field', () => {
+  it('skill-file.geodesic.json is valid JSON with $schema field', () => {
     const outputDir = path.join(tmpDir, 'out');
     const paths = writeArtifacts(makeSynthesisResult(), outputDir);
     const raw = fs.readFileSync(paths.skillFileJson, 'utf8');
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    expect(parsed['$schema']).toBe('https://geode.dev/schema/v1/skill-file.json');
+    expect(parsed['$schema']).toBe('https://geodesic.dev/schema/v1/skill-file.json');
   });
 
   it('architecture-map.md contains repo name and PHI zone coordinates', () => {
@@ -60,7 +60,7 @@ describe('writeArtifacts', () => {
     const outputDir = path.join(tmpDir, 'out');
     const paths = writeArtifacts(makeSynthesisResult(), outputDir);
     const content = fs.readFileSync(paths.gapReport, 'utf8');
-    expect(content).toContain('Geode Gap Report');
+    expect(content).toContain('Geodesic Gap Report');
     expect(content).toContain('62/100');
     expect(content).toContain('P0 — Critical Findings');
   });

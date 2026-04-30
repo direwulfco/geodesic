@@ -1,28 +1,28 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { GeodeConfig } from '@geode/types';
+import type { GeodesicConfig } from '@geodesic/types';
 
-const CONFIG_RELATIVE = path.join('.geode', 'config.json');
+const CONFIG_RELATIVE = path.join('.geodesic', 'config.json');
 
-function readConfig(filePath: string): GeodeConfig | null {
+function readConfig(filePath: string): GeodesicConfig | null {
   try {
     const raw = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(raw) as GeodeConfig;
+    return JSON.parse(raw) as GeodesicConfig;
   } catch {
     return null;
   }
 }
 
 /**
- * Loads Geode config from (in order):
+ * Loads Geodesic config from (in order):
  *   1. explicitPath (from --config CLI flag)
- *   2. .geode/config.json in CWD
- *   3. ~/.geode/config.json
+ *   2. .geodesic/config.json in CWD
+ *   3. ~/.geodesic/config.json
  *
  * Throws a descriptive error if none found.
  */
-export function loadConfig(explicitPath?: string, homeDir?: string): GeodeConfig {
+export function loadConfig(explicitPath?: string, homeDir?: string): GeodesicConfig {
   if (explicitPath) {
     const cfg = readConfig(explicitPath);
     if (!cfg) {
@@ -38,7 +38,7 @@ export function loadConfig(explicitPath?: string, homeDir?: string): GeodeConfig
   if (homeConfig) return homeConfig;
 
   throw new Error(
-    'No Geode config found. Run: geode config set provider <anthropic|openai|gemini|azure|ollama>\n' +
-    'Config is looked up in .geode/config.json (project) then ~/.geode/config.json (home).',
+    'No Geodesic config found. Run: geodesic config set provider <anthropic|openai|gemini|azure|ollama>\n' +
+    'Config is looked up in .geodesic/config.json (project) then ~/.geodesic/config.json (home).',
   );
 }

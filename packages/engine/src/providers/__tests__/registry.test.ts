@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { loadProvider, loadEchoProvider } from '../registry.js';
-import type { GeodeConfig } from '@geode/types';
-import { ProviderError } from '@geode/types';
+import type { GeodesicConfig } from '@geodesic/types';
+import { ProviderError } from '@geodesic/types';
 
-const baseConfig: GeodeConfig = {
+const baseConfig: GeodesicConfig = {
   provider: 'anthropic',
   apiKey: 'sk-ant-test-key',
   analystId: 'test@example.com',

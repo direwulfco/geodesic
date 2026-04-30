@@ -1,4 +1,4 @@
-import type { Crystal, CrystalQueryResult } from '@geode/types';
+import type { Crystal, CrystalQueryResult } from '@geodesic/types';
 import { parseFingerprint } from './fingerprint.js';
 
 // Segments within the same group receive partial credit (0.5) in fuzzy matching

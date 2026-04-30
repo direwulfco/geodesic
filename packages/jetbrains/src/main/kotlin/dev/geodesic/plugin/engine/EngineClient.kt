@@ -1,4 +1,4 @@
-package dev.geode.plugin.engine
+package dev.geodesic.plugin.engine
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject

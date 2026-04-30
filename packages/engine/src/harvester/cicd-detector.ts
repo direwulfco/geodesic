@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import yaml from 'js-yaml';
-import type { CiCdInventory, DockerInventory, FileTreeNode, GithubActionsWorkflow, MakefileInventory } from '@geode/types';
+import type { CiCdInventory, DockerInventory, FileTreeNode, GithubActionsWorkflow, MakefileInventory } from '@geodesic/types';
 
 function readFile(repoPath: string, relativePath: string): string | null {
   try {

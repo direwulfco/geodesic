@@ -1,4 +1,4 @@
-import type { Crystal } from '@geode/types';
+import type { Crystal } from '@geodesic/types';
 
 export function computeRecency(lastUsedAt: string | null): number {
   if (!lastUsedAt) return 0.1;

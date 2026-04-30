@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DatabaseInventory, DependencyManifest, FileTreeNode } from '@geode/types';
+import type { DatabaseInventory, DependencyManifest, FileTreeNode } from '@geodesic/types';
 
 const ORM_DEP_MAP: Record<string, string> = {
   prisma: 'Prisma',

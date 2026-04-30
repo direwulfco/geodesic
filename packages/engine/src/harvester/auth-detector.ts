@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ApiRoute, AuthInventory, AuthPattern, AuthPatternType, DependencyManifest, FileTreeNode } from '@geode/types';
+import type { ApiRoute, AuthInventory, AuthPattern, AuthPatternType, DependencyManifest, FileTreeNode } from '@geodesic/types';
 
 const JWT_DEP_SIGNALS = [
   'jsonwebtoken', 'jose', '@auth/core', 'next-auth', '@supabase/supabase-js',

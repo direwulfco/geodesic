@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.intellij") version "1.17.3"
 }
 
-group = "dev.geode"
+group = "dev.geodesic"
 version = "0.1.0"
 
 repositories {

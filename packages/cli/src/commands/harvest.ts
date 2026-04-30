@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import type { Command } from 'commander';
-import { harvest } from '@geode/engine';
+import { harvest } from '@geodesic/engine';
 
 /* eslint-disable no-console */
 export function registerHarvestCommand(program: Command): void {
@@ -24,10 +24,10 @@ export function registerHarvestCommand(program: Command): void {
         process.exit(1);
       }
 
-      console.error(`[geode] harvesting ${repoPath} ...`);
+      console.error(`[geodesic] harvesting ${repoPath} ...`);
       const result = harvest(repoPath);
       console.error(
-        '[geode] done in ' + String(result.meta.harvestDurationMs) + 'ms — ' +
+        '[geodesic] done in ' + String(result.meta.harvestDurationMs) + 'ms — ' +
         String(result.meta.totalFiles) + ' files, ' +
         String(result.apiRoutes.length) + ' routes, ' +
         String(result.piiCandidateLocations.length) + ' PII candidates',
@@ -40,7 +40,7 @@ export function registerHarvestCommand(program: Command): void {
       if (opts.output) {
         const outPath = path.resolve(opts.output);
         fs.writeFileSync(outPath, json, 'utf-8');
-        console.error(`[geode] result written to ${outPath}`);
+        console.error(`[geodesic] result written to ${outPath}`);
       } else {
         process.stdout.write(json + '\n');
       }

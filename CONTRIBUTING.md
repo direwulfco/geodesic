@@ -1,6 +1,6 @@
-# Contributing to Geode
+# Contributing to Geodesic
 
-Thank you for your interest in Geode. This document covers everything you need to get from zero to a passing CI run locally.
+Thank you for your interest in Geodesic. This document covers everything you need to get from zero to a passing CI run locally.
 
 ---
 
@@ -19,13 +19,13 @@ An AI provider API key (Anthropic, OpenAI, Gemini, Azure OpenAI, or a running Ol
 ## Setup
 
 ```bash
-git clone https://github.com/hyperpaced/geode.git
-cd geode
+git clone https://github.com/hyperpaced/geodesic.git
+cd geodesic
 npm install
 npm run build
 ```
 
-`npm install` bootstraps all workspaces in a single pass. `npm run build` compiles `@geode/types` → `@geode/engine` → `@geode/cli` in dependency order.
+`npm install` bootstraps all workspaces in a single pass. `npm run build` compiles `@geodesic/types` → `@geodesic/engine` → `@geodesic/cli` in dependency order.
 
 ---
 
@@ -35,7 +35,7 @@ npm run build
 packages/
 ├── types/       # Shared TypeScript types — build this first
 ├── engine/      # Core analysis daemon — REST API on localhost
-├── cli/         # Thin CLI wrapper (`geode analyze`)
+├── cli/         # Thin CLI wrapper (`geodesic analyze`)
 └── vscode-ext/  # VS Code/Cursor extension (.vsix)
 specs/           # Spec files — read the relevant spec before touching a component
 ```
@@ -51,7 +51,7 @@ npm run build
 node packages/engine/dist/server/start.js
 ```
 
-The engine starts on `http://localhost` (port configured in `.geode/config.json`). Point the CLI or extension at it from there.
+The engine starts on `http://localhost` (port configured in `.geodesic/config.json`). Point the CLI or extension at it from there.
 
 ---
 
@@ -105,10 +105,10 @@ Branch off `main`. Open your PR back to `main`.
 
 ## Good First Issues
 
-Issues tagged [`good first issue`](https://github.com/hyperpaced/geode/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) are scoped to be self-contained and don't require deep knowledge of the full pipeline. A good place to start.
+Issues tagged [`good first issue`](https://github.com/hyperpaced/geodesic/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) are scoped to be self-contained and don't require deep knowledge of the full pipeline. A good place to start.
 
 ---
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/hyperpaced/geode/discussions) for anything that isn't a bug or feature request.
+Open a [GitHub Discussion](https://github.com/hyperpaced/geodesic/discussions) for anything that isn't a bug or feature request.

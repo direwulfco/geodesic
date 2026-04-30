@@ -4,12 +4,12 @@ import type {
   CompletionOptions,
   CompletionResult,
   EmbeddingResult,
-  GeodeConfig,
+  GeodesicConfig,
   Message,
   ProviderHealthCheck,
   TokenCostEstimate,
-} from '@geode/types';
-import { ProviderError } from '@geode/types';
+} from '@geodesic/types';
+import { ProviderError } from '@geodesic/types';
 import { normalizeTo1536 } from './local-embeddings.js';
 
 const PRICING: Record<string, { input: number; output: number }> = {
@@ -40,7 +40,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   throw lastErr;
 }
 
-export function createProvider(config: GeodeConfig): AIProvider {
+export function createProvider(config: GeodesicConfig): AIProvider {
   if (!config.apiKey) {
     throw new ProviderError('openai', 'AUTH_FAILED', 'OpenAI API key is required', false);
   }
@@ -140,7 +140,7 @@ export function createProvider(config: GeodeConfig): AIProvider {
   };
 }
 
-export function createEchoProvider(config: GeodeConfig): AIProvider {
+export function createEchoProvider(config: GeodesicConfig): AIProvider {
   return createProvider({ ...config, model: 'gpt-4o-mini' });
 }
 

@@ -1,4 +1,4 @@
-import type { SynthesisResult } from '@geode/types';
+import type { SynthesisResult } from '@geodesic/types';
 
 export function renderArchitectureMap(synthesis: SynthesisResult): string {
   const { skillFile, architectureMapMarkdown } = synthesis;

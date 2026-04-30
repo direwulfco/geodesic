@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeFingerprint, normalizeFingerprint, parseFingerprint } from '../fingerprint.js';
-import type { HarvestResult } from '@geode/types';
+import type { HarvestResult } from '@geodesic/types';
 
 function makeHarvest(overrides: Partial<HarvestResult> = {}): HarvestResult {
   const base: HarvestResult = {
