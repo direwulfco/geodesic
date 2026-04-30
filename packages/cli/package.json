@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/hyperpaced/geode/issues"
   },
-  "author": "HyperPace <hello@hyperpaced.com>",
+  "author": "HyperPace <info@hyperpace.ai>",
   "bin": {
     "geode": "./dist/index.js"
   },

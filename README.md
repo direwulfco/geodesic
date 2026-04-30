@@ -186,4 +186,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-*Built by [HyperPace](https://hyperpaced.com)*
+*Built by [HyperPace](https://hyperpace.ai)*
