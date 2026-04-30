@@ -1,6 +1,6 @@
 {
-  "name": "geode-ai",
-  "displayName": "Geode",
+  "name": "geodesic",
+  "displayName": "Geodesic",
   "description": "Auto-topology agent: deep-dive codebase analysis with PHI/HIPAA-safe AI synthesis, Crystal learning, and scored gap reports.",
   "version": "0.1.0",
   "private": true,
