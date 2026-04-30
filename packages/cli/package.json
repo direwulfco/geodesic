@@ -1,0 +1,34 @@
+{
+  "name": "@geode/cli",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Geode CLI — run topology analysis from the terminal or CI pipelines.",
+  "license": "MIT",
+  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperpaced/geode"
+  },
+  "bugs": {
+    "url": "https://github.com/hyperpaced/geode/issues"
+  },
+  "author": "HyperPace <hello@hyperpaced.com>",
+  "bin": {
+    "geode": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@geode/engine": "*",
+    "@geode/types": "*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

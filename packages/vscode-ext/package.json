@@ -1,0 +1,128 @@
+{
+  "name": "geode",
+  "displayName": "Geode",
+  "description": "Auto-topology agent: deep-dive codebase analysis with PHI/HIPAA-safe AI synthesis, Crystal learning, and scored gap reports.",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "hyperpaced",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperpaced/geode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#0D1117",
+    "theme": "dark"
+  },
+  "categories": ["AI", "Other"],
+  "keywords": ["topology", "architecture", "analysis", "HIPAA", "AI", "codebase", "gap report", "security"],
+  "bugs": {
+    "url": "https://github.com/hyperpaced/geode/issues"
+  },
+  "homepage": "https://github.com/hyperpaced/geode#readme",
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/bundle.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "geode",
+          "title": "Geode",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "geode": [
+        {
+          "id": "geode.repos",
+          "name": "Repositories",
+          "type": "webview"
+        },
+        {
+          "id": "geode.results",
+          "name": "Results",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "geode.analyze",
+        "title": "Analyze Repository",
+        "category": "Geode",
+        "icon": "$(play)"
+      },
+      {
+        "command": "geode.addRepo",
+        "title": "Add Repository",
+        "category": "Geode",
+        "icon": "$(add)"
+      },
+      {
+        "command": "geode.removeRepo",
+        "title": "Remove Repository",
+        "category": "Geode",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "geode.configureProvider",
+        "title": "Configure AI Provider",
+        "category": "Geode",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "geode.syncCrystals",
+        "title": "Sync Crystal Store",
+        "category": "Geode",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "geode.openAttestation",
+        "title": "Open Attestation Chain",
+        "category": "Geode"
+      }
+    ],
+    "configuration": {
+      "title": "Geode",
+      "properties": {
+        "geode.outputDir": {
+          "type": "string",
+          "description": "Directory for analysis output. Defaults to a geode-findings/ folder created inside the analyzed repository.",
+          "scope": "resource"
+        },
+        "geode.autoStartEngine": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the Geode engine when VS Code opens.",
+          "scope": "application"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bundle": "node esbuild.mjs",
+    "bundle:prod": "node esbuild.mjs --production",
+    "package": "npm run bundle:prod && vsce package --no-dependencies",
+    "publish:marketplace": "npm run bundle:prod && vsce publish --no-dependencies",
+    "publish:openvsx": "npm run bundle:prod && ovsx publish --no-dependencies",
+    "publish:all": "npm run publish:marketplace && npm run publish:openvsx",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@geode/types": "*",
+    "@geode/engine": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "ovsx": "^0.9.5"
+  }
+}

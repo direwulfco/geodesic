@@ -1,0 +1,229 @@
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import { EngineManager } from './engine-manager.js';
+import { EngineClient } from './engine-client.js';
+import { ExtensionState } from './state.js';
+import { SidebarProvider } from './sidebar-provider.js';
+import { ResultsPanel } from './results-panel.js';
+import type { GeodeConfig } from '@geode/types';
+
+import { GEODE_VERSION } from '@geode/engine';
+export const EXTENSION_VERSION = GEODE_VERSION;
+
+const CONFIG_PATH = path.join(os.homedir(), '.geode', 'config.json');
+
+function saveConfig(provider: string, apiKey: string): void {
+  const dir = path.dirname(CONFIG_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const existing = fs.existsSync(CONFIG_PATH)
+    ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Record<string, unknown>
+    : {};
+
+  const config: Record<string, unknown> = {
+    ...existing,
+    provider,
+    apiKey: apiKey || undefined,
+    analystId: existing['analystId'] ?? `${os.userInfo().username}@${os.hostname()}`,
+  };
+
+  if (!apiKey) delete config['apiKey'];
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
+}
+
+function readConfigInfo(): { provider: string; hasApiKey: boolean } | null {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) return null;
+    const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Partial<GeodeConfig>;
+    if (!raw.provider) return null;
+    return { provider: raw.provider, hasApiKey: !!raw.apiKey };
+  } catch {
+    return null;
+  }
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+  const state = new ExtensionState(context.globalState);
+  const engineManager = new EngineManager();
+  const resultsPanel = new ResultsPanel();
+
+  let engineClient: EngineClient | null = null;
+
+  function getClient(): EngineClient | null {
+    return engineClient;
+  }
+
+  const sidebarProvider = new SidebarProvider(context, state, engineManager, {
+    onRunAnalysis: (paths) => { runAnalysis(paths); },
+    onConfigureProvider: (provider, apiKey) => {
+      saveConfig(provider, apiKey);
+      return Promise.resolve();
+    },
+    getClient,
+    getConfigInfo: readConfigInfo,
+  });
+
+  // Register sidebar webview view
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('geode.repos', sidebarProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
+
+  // Register commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand('geode.analyze', () => {
+      const repos = state.getRepos();
+      if (repos.length === 0) {
+        void vscode.window.showWarningMessage('No repositories added. Use Geode sidebar to add a repository first.');
+        return;
+      }
+      runAnalysis(repos.map(r => r.path));
+    }),
+
+    vscode.commands.registerCommand('geode.addRepo', async () => {
+      const uris = await vscode.window.showOpenDialog({
+        canSelectFolders: true,
+        canSelectFiles: false,
+        canSelectMany: false,
+        openLabel: 'Add Repository',
+      });
+      if (uris?.[0]) {
+        await state.addRepo(uris[0].fsPath);
+        void vscode.window.showInformationMessage(`Added: ${uris[0].fsPath}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('geode.removeRepo', async () => {
+      const repos = state.getRepos();
+      if (repos.length === 0) {
+        void vscode.window.showInformationMessage('No repositories to remove.');
+        return;
+      }
+      const pick = await vscode.window.showQuickPick(
+        repos.map(r => ({ label: r.label, description: r.path, path: r.path })),
+        { placeHolder: 'Select repository to remove' },
+      );
+      if (pick) {
+        await state.removeRepo(pick.path);
+        void vscode.window.showInformationMessage(`Removed: ${pick.path}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('geode.configureProvider', async () => {
+      const provider = await vscode.window.showQuickPick(
+        ['anthropic', 'openai', 'gemini', 'azure', 'ollama'],
+        { placeHolder: 'Select AI provider' },
+      );
+      if (!provider) return;
+
+      const apiKey = await vscode.window.showInputBox({
+        prompt: `API key for ${provider} (leave empty for ollama)`,
+        password: true,
+        placeHolder: provider === 'ollama' ? '(no key needed)' : 'sk-…',
+      });
+      if (apiKey === undefined) return;
+
+      saveConfig(provider, apiKey);
+      void vscode.window.showInformationMessage(`Provider configured: ${provider}`);
+      await sidebarProvider.pushState();
+    }),
+
+    vscode.commands.registerCommand('geode.syncCrystals', async () => {
+      const client = getClient();
+      if (!client) {
+        void vscode.window.showWarningMessage('Engine not running.');
+        return;
+      }
+      try {
+        const result = await client.syncCrystals();
+        void vscode.window.showInformationMessage(result.message);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        void vscode.window.showErrorMessage(`Sync failed: ${msg}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('geode.openAttestation', () => {
+      const attestationPath = path.join(os.homedir(), 'geode-attestation.jsonl');
+      if (!fs.existsSync(attestationPath)) {
+        void vscode.window.showInformationMessage('No attestation chain found. Run an analysis first.');
+        return;
+      }
+      void vscode.window.showTextDocument(vscode.Uri.file(attestationPath));
+    }),
+  );
+
+  // Re-push state whenever the workspace folders change (user opens/closes a folder)
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      void sidebarProvider.pushState();
+    }),
+  );
+
+  // Start engine on activation
+  const autoStart = vscode.workspace.getConfiguration('geode').get<boolean>('autoStartEngine', true);
+  if (autoStart) {
+    void engineManager.start(context).then(() => {
+      if (engineManager.port) {
+        engineClient = new EngineClient(engineManager.port);
+        void sidebarProvider.pushState();
+      }
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      void vscode.window.showErrorMessage(`Geode engine failed to start: ${msg}`);
+    });
+  }
+
+  function runAnalysis(repoPaths: string[]): void {
+    const client = getClient();
+    if (!client) {
+      void vscode.window.showErrorMessage('Geode engine is not running. Please wait for it to start.');
+      return;
+    }
+
+    for (const repoPath of repoPaths) {
+      void runSingleAnalysis(client, repoPath);
+    }
+  }
+
+  async function runSingleAnalysis(client: EngineClient, repoPath: string): Promise<void> {
+    try {
+      const { jobId } = await client.startAnalysis(repoPath);
+
+      await client.pollJob(jobId, (rawJob) => {
+        const j = rawJob as { progress?: unknown };
+        void sidebarProvider.updateProgress(j.progress);
+      });
+
+      const finalJob = await client.getJob(jobId);
+      const job = finalJob as { progress: { status: string; stage: string; phiZoneCount: number; crystalMatch: string | null; crystalMatchScore: number | null }; result: { synthesis: { skillFile: { meta: { repo: string; analyzedAt: string; analysisDurationMs: number }; phiZones: Array<{ file: string; lineStart: number; lineEnd: number; phiFieldCount: number; protectionMissing: string[] }> }; gapReport: { repoName: string; overallScore: number; overallGrade: string; dimensions: Array<{ dimension: string; score: number; grade: string; active: boolean; findings: Array<{ severity: string; description: string; file: string; lineStart: number; lineEnd: number; detail: string; fix: string; deduction: number }> }>; uncertainDetections: Array<{ file: string; lineStart: number; lineEnd: number; trigger: string; confidencePct: number; recommendedAction: string }> }; architectureMapMarkdown: string }; artifactPaths: { architectureMap: string; skillFileJson: string; skillFileMd: string; gapReport: string }; fingerprint: string }; error: string | null };
+
+      await sidebarProvider.clearProgress();
+
+      // pollJob resolves only on 'complete', so result is guaranteed here
+      resultsPanel.open(job, context);
+      const gr = job.result.synthesis.gapReport;
+      void vscode.window.showInformationMessage(
+        `Geode analysis complete — ${gr.repoName}: ${String(gr.overallScore)}/100 (${gr.overallGrade})`,
+        'View Results',
+      ).then(choice => {
+        if (choice === 'View Results') {
+          resultsPanel.open(job, context);
+        }
+      });
+    } catch (err) {
+      await sidebarProvider.clearProgress();
+      const msg = err instanceof Error ? err.message : String(err);
+      void vscode.window.showErrorMessage(`Analysis failed: ${msg}`);
+    }
+  }
+
+  context.subscriptions.push(state, engineManager, resultsPanel);
+}
+
+export function deactivate(): void {
+  // Engine manager is disposed via context.subscriptions
+}
