@@ -1,14 +1,16 @@
-# Geode
+<p align="center">
+  <img src="assets/banner.png" alt="Geode" width="880" />
+</p>
 
-[![CI](https://github.com/hyperpaced/geode/actions/workflows/ci.yml/badge.svg)](https://github.com/hyperpaced/geode/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/hyperpaced.geode?label=VS%20Code)](https://marketplace.visualstudio.com/items?itemName=hyperpaced.geode)
+<p align="center">
+  Geode deep-scans any codebase in minutes and produces a complete architecture map, AI-ready skill file, and scored gap report — available as a native VS Code and JetBrains extension, with zero config, zero cloud upload, and a PII intercept layer that keeps your code yours.
+</p>
 
-**Production-grade codebase topology analysis. PHI/HIPAA-safe. Provider-agnostic. Your data stays yours.**
-
-Geode performs deep static analysis of any repository, scrubs all PII/PHI before touching an AI, and produces three artifacts your team actually uses — a full architecture map, a machine-readable skill file for build agents, and a scored gap report with findings down to the exact file and line.
-
-It runs entirely on your machine. Your source code never leaves your environment intact.
+<p align="center">
+  <a href="https://github.com/hyperpaced/geode/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geode/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=hyperpaced.geode"><img src="https://img.shields.io/visual-studio-marketplace/v/hyperpaced.geode?label=VS%20Code" alt="VS Code Marketplace" /></a>
+</p>
 
 ---
 
