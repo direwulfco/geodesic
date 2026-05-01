@@ -10,6 +10,8 @@ export type SidebarMessage =
   | { type: 'configureProvider'; provider: string; apiKey: string }
   | { type: 'testConnection' }
   | { type: 'syncCrystals' }
+  | { type: 'saveCrystalStore'; repoUrl: string; token: string }
+  | { type: 'clearCrystalStore' }
   | { type: 'useWorkspace'; path: string; name: string }
   | { type: 'scanWorkspace'; path: string; name: string }
   | { type: 'openExternal'; url: string }
@@ -18,8 +20,11 @@ export type SidebarMessage =
 export interface SidebarCallbacks {
   onRunAnalysis: (paths: string[]) => void;
   onConfigureProvider: (provider: string, apiKey: string) => Promise<void>;
+  onSaveCrystalStore: (repoUrl: string, token: string) => void;
+  onClearCrystalStore: () => void;
   getClient: () => EngineClient | null;
   getConfigInfo: () => { provider: string; hasApiKey: boolean } | null;
+  getCrystalConfig: () => { repoUrl: string; hasToken: boolean };
 }
 
 function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
@@ -178,6 +183,9 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     provider: 'anthropic',
     hasApiKey: false,
     configOpen: false,
+    crystalStoreRepo: '',
+    hasCrystalToken: false,
+    crystalConfigOpen: false,
   };
 
   const API_KEY_URLS = {
@@ -356,11 +364,40 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
 
   function renderCrystals() {
     const count = state.crystalCount;
-    return '<h3>Crystal Store</h3>' +
-      '<div class="crystal-row">' +
-      '<span class="crystal-chip">💎 ' + String(count) + ' crystal' + (count !== 1 ? 's' : '') + '</span>' +
-      '<button class="btn btn-secondary sync-btn" data-action="syncCrystals">↺ Sync</button>' +
-      '</div>';
+    const repo = state.crystalStoreRepo || '';
+    const hasToken = state.hasCrystalToken || false;
+    const open = state.crystalConfigOpen || false;
+    const shortRepo = repo ? repo.replace('https://github.com/', '') : '';
+
+    let html = '<h3>Crystal Store</h3>';
+    html += '<div class="crystal-row">';
+    html += '<span class="crystal-chip">💎 ' + String(count) + ' crystal' + (count !== 1 ? 's' : '') + '</span>';
+    html += '<div style="display:flex;gap:4px;">';
+    html += '<button class="btn btn-secondary sync-btn" data-action="syncCrystals">↺ Sync</button>';
+    html += '<button class="btn btn-ghost sync-btn" data-action="toggleCrystalConfig" title="Configure Crystal Store">' + (open ? '✕' : '⚙') + '</button>';
+    html += '</div></div>';
+
+    if (!open && repo) {
+      html += '<div class="provider-hint" style="margin-top:4px;">→ ' + esc(shortRepo) + (hasToken ? ' · key set' : ' · <span style="color:var(--vscode-charts-yellow,#ffc107)">no token</span>') + '</div>';
+    } else if (!open) {
+      html += '<div class="provider-hint" style="margin-top:4px;"><button class="btn-link" data-action="toggleCrystalConfig">Configure shared store →</button></div>';
+    }
+
+    if (open) {
+      html += '<div style="margin-top:8px;">';
+      html += '<div class="form-row"><label>Repository URL</label>';
+      html += '<input type="text" id="crystal-repo-input" placeholder="https://github.com/you/geodesic-crystals" value="' + esc(repo) + '"></div>';
+      html += '<div class="form-row"><label>Access token' + (hasToken ? ' <span style="color:var(--vscode-charts-green,#4caf50)">· saved</span>' : '') + '</label>';
+      html += '<input type="password" id="crystal-token-input" placeholder="' + (hasToken ? 'leave blank to keep existing' : 'ghp_…') + '" autocomplete="off"></div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button class="btn btn-primary" style="flex:1;padding:5px;" data-action="saveCrystalStore">Save</button>';
+      if (repo) html += '<button class="btn btn-ghost" style="padding:5px 8px;" data-action="clearCrystalStore">Clear</button>';
+      html += '</div>';
+      html += '<div id="crystal-feedback" class="feedback hidden"></div>';
+      html += '</div>';
+    }
+
+    return html;
   }
 
   function progressWidth(status) {
@@ -402,6 +439,20 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     if (paths.length > 0) post({ type: 'runAnalysis', paths });
   }
   function syncCrystals() { post({ type: 'syncCrystals' }); }
+  function toggleCrystalConfig() { state.crystalConfigOpen = !state.crystalConfigOpen; render(); }
+  function saveCrystalStore() {
+    var repoInput = document.getElementById('crystal-repo-input');
+    var tokenInput = document.getElementById('crystal-token-input');
+    var repoUrl = repoInput ? repoInput.value.trim() : '';
+    var token = tokenInput ? tokenInput.value.trim() : '';
+    if (repoUrl && !repoUrl.startsWith('https://') && !repoUrl.startsWith('git@')) {
+      var fb = document.getElementById('crystal-feedback');
+      if (fb) { fb.className = 'feedback error'; fb.textContent = 'URL must start with https:// or git@'; }
+      return;
+    }
+    post({ type: 'saveCrystalStore', repoUrl: repoUrl, token: token });
+  }
+  function clearCrystalStore() { post({ type: 'clearCrystalStore' }); }
   function openConfig() { state.configOpen = true; render(); }
   function closeConfig() { state.configOpen = false; render(); }
 
@@ -456,13 +507,16 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     var actionEl = el.dataset && el.dataset.action ? el : el.closest('[data-action]');
     if (actionEl && actionEl.dataset.action) {
       switch (actionEl.dataset.action) {
-        case 'addRepo':      addRepo();     break;
-        case 'runAnalysis':  runAnalysis(); break;
-        case 'saveConfig':   saveConfig();  break;
-        case 'testConn':     testConn();    break;
-        case 'openConfig':   openConfig();  break;
-        case 'closeConfig':  closeConfig(); break;
-        case 'syncCrystals': syncCrystals(); break;
+        case 'addRepo':             addRepo();             break;
+        case 'runAnalysis':         runAnalysis();         break;
+        case 'saveConfig':          saveConfig();          break;
+        case 'testConn':            testConn();            break;
+        case 'openConfig':          openConfig();          break;
+        case 'closeConfig':         closeConfig();         break;
+        case 'syncCrystals':        syncCrystals();        break;
+        case 'toggleCrystalConfig': toggleCrystalConfig(); break;
+        case 'saveCrystalStore':    saveCrystalStore();    break;
+        case 'clearCrystalStore':   clearCrystalStore();   break;
       }
     }
   });
@@ -486,6 +540,10 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     }
     if (msg.type === 'configFeedback') {
       showFeedback(msg.text, msg.kind || 'success');
+    }
+    if (msg.type === 'crystalConfigFeedback') {
+      var fb = document.getElementById('crystal-feedback');
+      if (fb) { fb.className = 'feedback ' + (msg.kind || 'success'); fb.textContent = msg.text; }
     }
   });
 
@@ -609,6 +667,26 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           break;
         }
 
+        case 'saveCrystalStore':
+          this.callbacks.onSaveCrystalStore(msg.repoUrl, msg.token);
+          await this.pushState();
+          await this._view?.webview.postMessage({
+            type: 'crystalConfigFeedback',
+            text: msg.repoUrl ? `Crystal Store saved — run ↺ Sync to connect` : 'Crystal Store cleared',
+            kind: 'success',
+          });
+          break;
+
+        case 'clearCrystalStore':
+          this.callbacks.onClearCrystalStore();
+          await this.pushState();
+          await this._view?.webview.postMessage({
+            type: 'crystalConfigFeedback',
+            text: 'Crystal Store cleared — running local-only',
+            kind: 'info',
+          });
+          break;
+
         case 'openExternal':
           if (msg.url) {
             void vscode.env.openExternal(vscode.Uri.parse(msg.url));
@@ -640,6 +718,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     const configInfo = this.callbacks.getConfigInfo();
+    const crystalConfig = this.callbacks.getCrystalConfig();
     const workspaceFolders = (vscode.workspace.workspaceFolders ?? [])
       .map(f => ({ name: f.name, path: f.uri.fsPath }));
 
@@ -657,6 +736,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         hasConfig: configInfo !== null && (configInfo.hasApiKey || configInfo.provider === 'ollama'),
         provider: configInfo?.provider ?? 'anthropic',
         hasApiKey: configInfo?.hasApiKey ?? false,
+        crystalStoreRepo: crystalConfig.repoUrl,
+        hasCrystalToken: crystalConfig.hasToken,
       },
     });
   }

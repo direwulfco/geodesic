@@ -38,8 +38,9 @@ class SidebarPanel(
 
     init {
         val settings = GeodesicSettings.getInstance()
-        providerCombo.selectedItem = settings.provider
-        apiKeyField.text = settings.apiKey
+        val (provider, apiKey) = GeodesicSettings.readConfig()
+        providerCombo.selectedItem = provider
+        apiKeyField.text = apiKey
         settings.repos.forEach { repoListModel.addElement(it) }
 
         build()
@@ -160,10 +161,9 @@ class SidebarPanel(
     }
 
     private fun saveConfig() {
-        val settings = GeodesicSettings.getInstance()
-        settings.provider = providerCombo.selectedItem as String
-        settings.apiKey = String(apiKeyField.password)
-        Messages.showInfoMessage(project, "Provider saved: ${settings.provider}", "Geodesic")
+        val provider = providerCombo.selectedItem as String
+        GeodesicSettings.saveConfig(provider, String(apiKeyField.password))
+        Messages.showInfoMessage(project, "Provider saved: $provider", "Geodesic")
     }
 
     private fun testConnection() {

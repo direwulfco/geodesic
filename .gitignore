@@ -9,14 +9,16 @@ build/
 *.d.ts.map
 
 # Analysis output — never commit
-geode-findings/
-geode-attestation.jsonl
-**/geode-attestation.jsonl
+geodesic-findings/
+**/geodesic-findings/
+geodesic-attestation.jsonl
+**/geodesic-attestation.jsonl
 
 # Config and secrets — never commit
 .env
 .env.local
 .env.*.local
+.geodesic/config.json
 .geode/config.json
 
 # Logs

@@ -3,8 +3,8 @@ package dev.geodesic.plugin.engine
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.util.SystemInfo
 import java.io.File
-import java.net.ServerSocket
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
 
 private val LOG = logger<EngineManager>()
 private val PORT_PATTERN = Regex("""GEODE_ENGINE_PORT=(\d+)""")
@@ -12,7 +12,7 @@ private const val STARTUP_TIMEOUT_MS = 15_000L
 
 class EngineManager {
     private var process: Process? = null
-    private var _port: Int? = null
+    @Volatile private var _port: Int? = null
     val port: Int? get() = _port
 
     private val statusListeners = mutableListOf<(String) -> Unit>()
@@ -51,16 +51,16 @@ class EngineManager {
         process = proc
 
         val startTime = System.currentTimeMillis()
-        var portFound = false
+        val portFound = AtomicBoolean(false)
 
-        val stdoutThread = Thread {
+        Thread {
             proc.inputStream.bufferedReader().use { reader ->
                 var line = reader.readLine()
                 while (line != null) {
                     val match = PORT_PATTERN.find(line)
                     if (match != null) {
                         _port = match.groupValues[1].toIntOrNull()
-                        portFound = true
+                        portFound.set(true)
                         fireStatus("Engine running on port ${_port}")
                     }
                     line = reader.readLine()
@@ -68,7 +68,7 @@ class EngineManager {
             }
         }.also { it.isDaemon = true; it.start() }
 
-        val stderrThread = Thread {
+        Thread {
             proc.errorStream.bufferedReader().use { reader ->
                 var line = reader.readLine()
                 while (line != null) {
@@ -80,11 +80,11 @@ class EngineManager {
 
         // Wait for port to be discovered (up to STARTUP_TIMEOUT_MS)
         val deadline = startTime + STARTUP_TIMEOUT_MS
-        while (!portFound && System.currentTimeMillis() < deadline && proc.isAlive) {
+        while (!portFound.get() && System.currentTimeMillis() < deadline && proc.isAlive) {
             Thread.sleep(100)
         }
 
-        if (!portFound) {
+        if (!portFound.get()) {
             proc.destroyForcibly()
             process = null
             fireStatus("Engine failed to start within ${STARTUP_TIMEOUT_MS / 1000}s timeout")
@@ -95,11 +95,7 @@ class EngineManager {
             val code = proc.waitFor()
             process = null
             _port = null
-            if (code != 0) {
-                fireStatus("Engine stopped (exit $code)")
-            } else {
-                fireStatus("Engine stopped")
-            }
+            fireStatus(if (code != 0) "Engine stopped (exit $code)" else "Engine stopped")
         }.also { it.isDaemon = true; it.start() }
 
         return true
@@ -112,16 +108,17 @@ class EngineManager {
     }
 
     private fun findEngineScript(): String? {
-        // 1. Common global npm install locations
         val npmGlobalPaths = buildList {
             if (SystemInfo.isWindows) {
                 val appData = System.getenv("APPDATA") ?: ""
-                add(Paths.get(appData, "npm", "node_modules", "@geode", "engine", "dist", "server", "start.js").toString())
+                add(Paths.get(appData, "npm", "node_modules", "@geodesic", "engine", "dist", "server", "start.js").toString())
+                // Also check npm prefix for non-APPDATA installs
+                add(Paths.get(appData, "npm", "node_modules", "@geodesic", "cli", "node_modules", "@geodesic", "engine", "dist", "server", "start.js").toString())
             } else {
                 add("/usr/local/lib/node_modules/@geodesic/engine/dist/server/start.js")
                 add("/usr/lib/node_modules/@geodesic/engine/dist/server/start.js")
                 val home = System.getProperty("user.home") ?: ""
-                add(Paths.get(home, ".npm-global", "lib", "node_modules", "@geode", "engine", "dist", "server", "start.js").toString())
+                add(Paths.get(home, ".npm-global", "lib", "node_modules", "@geodesic", "engine", "dist", "server", "start.js").toString())
             }
         }
 
@@ -129,13 +126,25 @@ class EngineManager {
             if (File(p).exists()) return p
         }
 
-        // 2. NVM locations
+        // NVM locations (unix)
         val home = System.getProperty("user.home") ?: ""
         val nvmBase = File(home, ".nvm/versions/node")
         if (nvmBase.exists()) {
             nvmBase.listFiles()?.sortedDescending()?.forEach { nodeDir ->
                 val candidate = File(nodeDir, "lib/node_modules/@geodesic/engine/dist/server/start.js")
                 if (candidate.exists()) return candidate.absolutePath
+            }
+        }
+
+        // NVM Windows
+        if (SystemInfo.isWindows) {
+            val appData = System.getenv("APPDATA") ?: ""
+            val nvmWinBase = File(appData, "nvm")
+            if (nvmWinBase.exists()) {
+                nvmWinBase.listFiles()?.sortedDescending()?.forEach { nodeDir ->
+                    val candidate = File(nodeDir, "node_modules/@geodesic/engine/dist/server/start.js")
+                    if (candidate.exists()) return candidate.absolutePath
+                }
             }
         }
 
@@ -167,9 +176,5 @@ class EngineManager {
         }
 
         return "node"
-    }
-
-    fun findFreePort(): Int {
-        ServerSocket(0).use { return it.localPort }
     }
 }

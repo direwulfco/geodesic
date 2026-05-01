@@ -25,10 +25,14 @@ export class PurityCheckError extends Error {
   constructor(
     public readonly matchedPattern: string,
     public readonly position: number,
+    public readonly fieldPath?: string,
+    public readonly matchedValue?: string,
   ) {
     super(
-      `Purity check failed: pattern '${matchedPattern}' matched at position ${String(position)}. ` +
-        'No PII may pass to the AI or be written to Crystal Store.',
+      `Purity check failed: pattern '${matchedPattern}' matched at position ${String(position)}` +
+        (fieldPath ? ` in field '${fieldPath}'` : '') +
+        (matchedValue ? ` — value: '${matchedValue}'` : '') +
+        '. No PII may pass to the AI or be written to Crystal Store.',
     );
   }
 }

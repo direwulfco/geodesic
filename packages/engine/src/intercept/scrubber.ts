@@ -178,6 +178,8 @@ export function intercept(
     throw new PurityCheckError(
       purity.firstMatchPattern ?? 'unknown',
       purity.firstMatchPosition ?? 0,
+      purity.firstMatchPath ?? undefined,
+      purity.firstMatchValue ?? undefined,
     );
   }
 

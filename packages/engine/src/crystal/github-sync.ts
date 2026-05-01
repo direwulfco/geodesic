@@ -71,10 +71,32 @@ async function isGitRepo(dir: string): Promise<boolean> {
   return result.success;
 }
 
+async function getRemoteUrl(dir: string): Promise<string | null> {
+  const result = await git(dir, ['remote', 'get-url', 'origin']);
+  return result.success ? result.stdout : null;
+}
+
+async function ensureRemote(dir: string, config?: CrystalSyncConfig): Promise<boolean> {
+  const existing = await getRemoteUrl(dir);
+  if (existing) return true;
+  if (!config?.crystalStoreRepo) return false;
+  // Always add the clean URL — token is never stored in .git/config
+  const result = await git(dir, ['remote', 'add', 'origin', config.crystalStoreRepo]);
+  return result.success;
+}
+
+function tokenArgs(config: CrystalSyncConfig | undefined): string[] {
+  if (!config?.crystalStoreToken) return [];
+  return ['-c', `url.${authedUrl('https://github.com/', config.crystalStoreToken)}.insteadOf=https://github.com/`];
+}
+
 async function cloneRepo(repoUrl: string, targetDir: string, token?: string): Promise<SyncResult> {
   fs.mkdirSync(path.dirname(targetDir), { recursive: true });
-  const url = token ? authedUrl(repoUrl, token) : repoUrl;
-  const result = await git(path.dirname(targetDir), ['clone', url, path.basename(targetDir)]);
+  // Use -c url.insteadOf so the token is never written to .git/config
+  const extraArgs = token
+    ? ['-c', `url.${authedUrl('https://github.com/', token)}.insteadOf=https://github.com/`]
+    : [];
+  const result = await git(path.dirname(targetDir), [...extraArgs, 'clone', repoUrl, path.basename(targetDir)]);
   if (result.success) {
     return { success: true, requiresAction: false, message: 'Crystal Store initialized from your repository' };
   }
@@ -117,11 +139,43 @@ export async function pullCrystals(crystalsDir: string, config?: CrystalSyncConf
     return cloneRepo(config.crystalStoreRepo, crystalsDir, config.crystalStoreToken);
   }
 
+  const hasRemote = await ensureRemote(crystalsDir, config);
+  if (!hasRemote) {
+    return { success: true, requiresAction: false, message: 'Running local-only (no Crystal Store configured)' };
+  }
+
   const now = new Date().toISOString();
   const state = readSyncState(crystalsDir);
-  const result = await git(crystalsDir, ['pull', '--ff-only']);
+  let pullResult = await git(crystalsDir, [...tokenArgs(config), 'pull', '--ff-only']);
 
-  if (result.success) {
+  // "no tracking information" means the remote was just added but no local branch tracks it yet.
+  // Two sub-cases:
+  //   A) Local has commits but no tracking → fetch + merge FETCH_HEAD
+  //   B) Local has no commits at all (empty repo) → fetch + checkout remote branch
+  if (!pullResult.success && (
+    pullResult.stderr.includes('no tracking') ||
+    pullResult.stderr.includes('no upstream') ||
+    pullResult.stderr.includes('There is no tracking information')
+  )) {
+    const fetchResult = await git(crystalsDir, [...tokenArgs(config), 'fetch', 'origin']);
+    if (fetchResult.success) {
+      const mergeResult = await git(crystalsDir, ['merge', '--ff-only', 'FETCH_HEAD']);
+      if (mergeResult.success) {
+        pullResult = { success: true, stderr: '', stdout: '' };
+      } else {
+        // Empty repo — checkout the remote branch directly (tries main then master)
+        const checkoutMain = await git(crystalsDir, ['checkout', '-b', 'main', '--track', 'origin/main']);
+        if (checkoutMain.success) {
+          pullResult = { success: true, stderr: '', stdout: '' };
+        } else {
+          const checkoutMaster = await git(crystalsDir, ['checkout', '-b', 'master', '--track', 'origin/master']);
+          if (checkoutMaster.success) pullResult = { success: true, stderr: '', stdout: '' };
+        }
+      }
+    }
+  }
+
+  if (pullResult.success) {
     writeSyncState(crystalsDir, { ...state, lastPullAt: now, consecutiveFailures: 0 });
     return { success: true, requiresAction: false, message: 'Crystal Store updated' };
   }
@@ -129,7 +183,7 @@ export async function pullCrystals(crystalsDir: string, config?: CrystalSyncConf
   return {
     success: false,
     requiresAction: false,
-    message: `Sync failed: ${result.stderr}. Continuing with local cache.`,
+    message: `Sync failed: ${pullResult.stderr}. Continuing with local cache.`,
   };
 }
 
@@ -178,9 +232,12 @@ export async function pushCrystals(
     return { success: false, requiresAction: false, message: `git commit failed: ${commitResult.stderr}` };
   }
 
-  const pushArgs = config?.crystalStoreToken
-    ? ['-c', `url.${authedUrl('https://github.com/', config.crystalStoreToken)}.insteadOf=https://github.com/`, 'push']
-    : ['push'];
+  const hasRemote = await ensureRemote(crystalsDir, config);
+  if (!hasRemote) {
+    return { success: true, requiresAction: false, message: 'Crystal saved locally (no Crystal Store configured)' };
+  }
+
+  const pushArgs = [...tokenArgs(config), 'push'];
 
   const pushResult = await git(crystalsDir, pushArgs);
   if (!pushResult.success) {

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Geodesic deep-scans any codebase in minutes and produces a complete architecture map, AI-ready skill file, and scored gap report — available as a native VS Code and JetBrains extension, with zero config, zero cloud upload, and a PII intercept layer that keeps your code yours.
+  Geodesic is a cross-editor codebase intelligence tool that deep-scans any repository and produces three artifacts: a full architecture map, an AI-ready skill file, and a scored gap report across seven quality dimensions. Every analysis runs entirely on your machine through a local engine daemon with no cloud upload and no code leaving your environment. A mandatory PII/HIPAA intercept layer scrubs every string value before it reaches the AI, replacing detections with typed tokens and writing a tamper-evident attestation chain for compliance teams. The Crystal Store accumulates structural patterns across every analysis into your own private GitHub repository, giving your team compounding intelligence that gets sharper with every run. Works natively in VS Code, Cursor, JetBrains IDEs, and the terminal with one engine powering every editor.
 </p>
 
 <p align="center">
@@ -11,6 +11,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geodesic?label=VS%20Code" alt="VS Code Marketplace" /></a>
 </p>
+
+---
+
+[![asciicast](https://asciinema.org/a/1000787.svg)](https://asciinema.org/a/1000787)
 
 ---
 
@@ -79,7 +83,7 @@ Install directly from the [VS Code Marketplace](https://marketplace.visualstudio
 
 Or install from VSIX:
 ```bash
-code --install-extension geodesic-0.1.0.vsix
+code --install-extension geodesic-1.0.0.vsix
 ```
 
 The VSIX is self-contained — the analysis engine is bundled. No separate install required.
@@ -186,4 +190,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-*Built by [HyperPace](https://hyperpace.ai)*
+*Built by [HyperPace](https://github.com/hyperpaced)*

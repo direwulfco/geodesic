@@ -162,6 +162,37 @@ export function registerConfigCommand(program: Command): void {
       writeConfig({ crystalStoreToken: token.trim() });
       console.log('[geodesic] Crystal Store token saved');
     });
+
+  // config unset (subcommand group)
+  const unsetCmd = configCmd
+    .command('unset')
+    .description('Remove a configuration value');
+
+  unsetCmd
+    .command('crystal-store-repo')
+    .description('Remove the Crystal Store repo URL — reverts to local-only mode')
+    .action(() => {
+      const cfg = readExisting();
+      delete cfg['crystalStoreRepo'];
+      const dir = path.dirname(CONFIG_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+      console.log('[geodesic] Crystal Store repo cleared — running local-only');
+      console.log(`[geodesic] config: ${CONFIG_PATH}`);
+    });
+
+  unsetCmd
+    .command('crystal-store-token')
+    .description('Remove the Crystal Store access token')
+    .action(() => {
+      const cfg = readExisting();
+      delete cfg['crystalStoreToken'];
+      const dir = path.dirname(CONFIG_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+      console.log('[geodesic] Crystal Store token cleared');
+      console.log(`[geodesic] config: ${CONFIG_PATH}`);
+    });
 }
 
 /* eslint-enable no-console */

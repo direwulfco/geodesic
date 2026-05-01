@@ -44,6 +44,39 @@ function readConfigInfo(): { provider: string; hasApiKey: boolean } | null {
   }
 }
 
+function readCrystalConfig(): { repoUrl: string; hasToken: boolean } {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) return { repoUrl: '', hasToken: false };
+    const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Partial<GeodesicConfig>;
+    return { repoUrl: raw.crystalStoreRepo ?? '', hasToken: !!raw.crystalStoreToken };
+  } catch {
+    return { repoUrl: '', hasToken: false };
+  }
+}
+
+function saveCrystalConfig(repoUrl: string, token: string): void {
+  const dir = path.dirname(CONFIG_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const existing: Record<string, unknown> = fs.existsSync(CONFIG_PATH)
+    ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Record<string, unknown>
+    : {};
+  if (repoUrl) existing['crystalStoreRepo'] = repoUrl;
+  else delete existing['crystalStoreRepo'];
+  if (token) existing['crystalStoreToken'] = token;
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(existing, null, 2), 'utf8');
+}
+
+function clearCrystalConfig(): void {
+  const dir = path.dirname(CONFIG_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const existing: Record<string, unknown> = fs.existsSync(CONFIG_PATH)
+    ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) as Record<string, unknown>
+    : {};
+  delete existing['crystalStoreRepo'];
+  delete existing['crystalStoreToken'];
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(existing, null, 2), 'utf8');
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const state = new ExtensionState(context.globalState);
   const engineManager = new EngineManager();
@@ -61,8 +94,11 @@ export function activate(context: vscode.ExtensionContext): void {
       saveConfig(provider, apiKey);
       return Promise.resolve();
     },
+    onSaveCrystalStore: (repoUrl, token) => { saveCrystalConfig(repoUrl, token); },
+    onClearCrystalStore: () => { clearCrystalConfig(); },
     getClient,
     getConfigInfo: readConfigInfo,
+    getCrystalConfig: readCrystalConfig,
   });
 
   // Register sidebar webview view

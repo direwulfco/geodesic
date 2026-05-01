@@ -23,11 +23,11 @@ export class EngineManager implements vscode.Disposable {
     if (fs.existsSync(bundledPath)) return bundledPath;
 
     // 2. Workspace symlink (monorepo dev)
-    const wsPath = path.join(context.extensionPath, '..', '..', 'node_modules', '@geode', 'engine', 'dist', 'server', 'start.js');
+    const wsPath = path.join(context.extensionPath, '..', '..', 'node_modules', '@geodesic', 'engine', 'dist', 'server', 'start.js');
     if (fs.existsSync(wsPath)) return wsPath;
 
     // 3. Extension node_modules
-    const extPath = path.join(context.extensionPath, 'node_modules', '@geode', 'engine', 'dist', 'server', 'start.js');
+    const extPath = path.join(context.extensionPath, 'node_modules', '@geodesic', 'engine', 'dist', 'server', 'start.js');
     if (fs.existsSync(extPath)) return extPath;
 
     return null;

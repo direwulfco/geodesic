@@ -3,9 +3,11 @@ package dev.geodesic.plugin.toolwindow
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.content.ContentFactory
 import dev.geodesic.plugin.engine.GapReport
 import dev.geodesic.plugin.engine.JobResult
 import dev.geodesic.plugin.engine.SynthesisData
@@ -15,7 +17,6 @@ import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
 import javax.swing.*
-import javax.swing.event.HyperlinkEvent
 
 class ResultsPanel private constructor(
     project: Project,
@@ -186,12 +187,26 @@ class ResultsPanel private constructor(
     companion object {
         fun show(project: Project, job: JobResult) {
             SwingUtilities.invokeLater {
-                val frame = JFrame("Geodesic Results — ${job.result?.synthesis?.gapReport?.repoName ?: "Analysis"}")
-                frame.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
-                frame.setSize(900, 650)
-                frame.contentPane = ResultsPanel(project, job)
-                frame.setLocationRelativeTo(null)
-                frame.isVisible = true
+                val repoName = job.result?.synthesis?.gapReport?.repoName ?: "Analysis"
+                val panel = ResultsPanel(project, job)
+
+                val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Geodesic")
+                if (toolWindow != null) {
+                    val content = ContentFactory.getInstance().createContent(panel, "Results: $repoName", true)
+                    content.isCloseable = true
+                    toolWindow.contentManager.addContent(content)
+                    toolWindow.contentManager.setSelectedContent(content)
+                    toolWindow.show()
+                    toolWindow.activate(null)
+                } else {
+                    // Fallback if tool window not available
+                    val frame = JFrame("Geodesic — $repoName")
+                    frame.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+                    frame.setSize(900, 650)
+                    frame.contentPane = panel
+                    frame.setLocationRelativeTo(null)
+                    frame.isVisible = true
+                }
             }
         }
     }

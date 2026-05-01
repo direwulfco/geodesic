@@ -16,10 +16,10 @@ class GeodesicSettingsConfigurable : Configurable {
     override fun getDisplayName(): String = "Geodesic"
 
     override fun createComponent(): JComponent {
-        val settings = GeodesicSettings.getInstance()
-        providerCombo.selectedItem = settings.provider
-        apiKeyField.text = settings.apiKey
-        autoStartCheckbox.isSelected = settings.autoStartEngine
+        val (provider, apiKey) = GeodesicSettings.readConfig()
+        providerCombo.selectedItem = provider
+        apiKeyField.text = apiKey
+        autoStartCheckbox.isSelected = GeodesicSettings.getInstance().autoStartEngine
 
         val panel = JPanel(GridBagLayout())
         val gbc = GridBagConstraints().apply {
@@ -48,23 +48,24 @@ class GeodesicSettingsConfigurable : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val settings = GeodesicSettings.getInstance()
-        return providerCombo.selectedItem != settings.provider
-            || String(apiKeyField.password) != settings.apiKey
-            || autoStartCheckbox.isSelected != settings.autoStartEngine
+        val (provider, apiKey) = GeodesicSettings.readConfig()
+        return providerCombo.selectedItem != provider
+            || String(apiKeyField.password) != apiKey
+            || autoStartCheckbox.isSelected != GeodesicSettings.getInstance().autoStartEngine
     }
 
     override fun apply() {
-        val settings = GeodesicSettings.getInstance()
-        settings.provider = providerCombo.selectedItem as String
-        settings.apiKey = String(apiKeyField.password)
-        settings.autoStartEngine = autoStartCheckbox.isSelected
+        GeodesicSettings.saveConfig(
+            provider = providerCombo.selectedItem as String,
+            apiKey = String(apiKeyField.password),
+        )
+        GeodesicSettings.getInstance().autoStartEngine = autoStartCheckbox.isSelected
     }
 
     override fun reset() {
-        val settings = GeodesicSettings.getInstance()
-        providerCombo.selectedItem = settings.provider
-        apiKeyField.text = settings.apiKey
-        autoStartCheckbox.isSelected = settings.autoStartEngine
+        val (provider, apiKey) = GeodesicSettings.readConfig()
+        providerCombo.selectedItem = provider
+        apiKeyField.text = apiKey
+        autoStartCheckbox.isSelected = GeodesicSettings.getInstance().autoStartEngine
     }
 }
