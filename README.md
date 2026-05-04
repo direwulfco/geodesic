@@ -3,18 +3,63 @@
 </p>
 
 <p align="center">
-  Geodesic is a cross-editor codebase intelligence tool that deep-scans any repository and produces three artifacts: a full architecture map, an AI-ready skill file, and a scored gap report across seven quality dimensions. Every analysis runs entirely on your machine through a local engine daemon with no cloud upload and no code leaving your environment. A mandatory PII/HIPAA intercept layer scrubs every string value before it reaches the AI, replacing detections with typed tokens and writing a tamper-evident attestation chain for compliance teams. The Crystal Store accumulates structural patterns across every analysis into your own private GitHub repository, giving your team compounding intelligence that gets sharper with every run. Works natively in VS Code, Cursor, JetBrains IDEs, and the terminal with one engine powering every editor.
+  <strong>Codebase intelligence that runs on your machine. Architecture map, agent-ready skill file, and scored gap report — without sending a line of source code to anyone's cloud.</strong>
+</p>
+
+<p align="center">
+  Built for the cases hosted documentation tools can't reach: HIPAA-grade scrubbing, a tamper-evident audit trail, and the AI provider of your choice. The <code>skill-file.geodesic.json</code> it produces is a brain transplant for Cursor, Claude Code, Antigravity, and any agent that needs real context about your repo.
 </p>
 
 <p align="center">
   <a href="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geodesic?label=VS%20Code" alt="VS Code Marketplace" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic-topology-agent"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geodesic-topology-agent?label=VS%20Code" alt="VS Code Marketplace" /></a>
+  <a href="https://open-vsx.org/extension/HyperPace/geodesic-topology-agent"><img src="https://img.shields.io/open-vsx/v/HyperPace/geodesic-topology-agent?label=Open%20VSX" alt="Open VSX" /></a>
 </p>
 
 ---
 
-[![asciicast](https://asciinema.org/a/1000787.svg)](https://asciinema.org/a/1000787)
+<p align="center">
+  <img src="packages/vscode-ext/resources/screenshots/geodesic_vscode_scan_record.gif" alt="Geodesic scanning a repository in VS Code" width="880" />
+</p>
+
+---
+
+## What hosted tools can't do
+
+| What you need | Why hosted services can't deliver | How Geodesic answers |
+|---|---|---|
+| **Code stays on-prem** | Cloud-hosted documentation tools upload your repo to a third party | Engine runs locally. No uploads, no SaaS data residency questions, no BAA negotiation |
+| **HIPAA / regulated industries** | No general-purpose cloud SaaS will sign a BAA for arbitrary source code | PHI/PII intercept layer + tamper-evident attestation chain ship with every scan |
+| **Multi-provider freedom** | Single-vendor tools lock you to one AI | Anthropic, OpenAI, Gemini, Azure, or local Ollama — one config flag |
+| **Agent-readable output** | Wiki tools produce docs for humans to scroll | The skill file is machine-consumable context built for Cursor, Claude Code, Copilot, and any agent operating on your codebase |
+
+---
+
+## Three artifacts, every run
+
+Written to `<your-repo>/geodesic-findings/` (auto-gitignored):
+
+### Architecture Map — full topology
+Layers, APIs, databases, auth patterns, infrastructure.
+
+<p align="center">
+  <img src="packages/vscode-ext/resources/screenshots/geodesic_sc_arch_tab.png" alt="Architecture Map tab" width="880" />
+</p>
+
+### Skill File — context your agent can actually use
+Machine-readable (`skill-file.geodesic.json`) and human-readable (`skill-file.geodesic.md`). Stop pasting files into Claude.
+
+<p align="center">
+  <img src="packages/vscode-ext/resources/screenshots/geodesic_sc_skill_tab.png" alt="Skill File tab" width="880" />
+</p>
+
+### Gap Report — scored, prioritized, exact
+Seven dimensions. P0–P3 findings with `file:line` references.
+
+<p align="center">
+  <img src="packages/vscode-ext/resources/screenshots/geodesic_sc_gap_tab.png" alt="Gap Report tab" width="880" />
+</p>
 
 ---
 
@@ -45,22 +90,20 @@ Crystal Extractor       — updates your Crystal Store with structural patterns
 
 ---
 
-## Output artifacts
+## Why Geodesic is different
 
-All artifacts are written to `<repo>/geodesic-findings/` — a folder created inside the analyzed repository (gitignored automatically).
-
-| File | Description |
-|---|---|
-| `architecture-map.md` | Full topology: layers, APIs, databases, auth patterns, infrastructure |
-| `skill-file.geodesic.json` | Machine-readable context package for build agents and CI pipelines |
-| `skill-file.geodesic.md` | Human-readable version of the skill file |
-| `gap-report.md` | Scored across 7 dimensions, P0–P3 findings with exact file:line references |
+- **Local-first.** The engine runs on your machine. Code never leaves your environment.
+- **HIPAA-safe by default.** A mandatory PII intercept layer scrubs every string value before any AI call. The AI never sees a raw value.
+- **Tamper-evident attestation chain.** Every scrubbed value is logged in a SHA-256-linked `.jsonl` your compliance team can audit.
+- **Bring your own AI.** Anthropic, OpenAI, Gemini, Azure OpenAI, or fully local with Ollama. One config flag.
+- **Crystal Store.** Compounding intelligence stored in a private GitHub repo *you own*. We never see it. Cache hits cut token cost ~70%.
+- **Cross-editor.** One engine powers VS Code, Cursor, Antigravity, VSCodium, JetBrains IDEs, and the terminal.
 
 ---
 
 ## Crystal Store
 
-The Crystal Store is a learning system that accumulates structural patterns across analyses. It lives in **your own GitHub repository** — Geodesic reads and writes it directly. We never see it, touch it, or host it.
+A learning system that accumulates structural patterns across analyses. It lives in **your own GitHub repository** — Geodesic reads and writes it directly. We never see it, touch it, or host it.
 
 ```bash
 # Point Geodesic at your own repo
@@ -71,7 +114,7 @@ geodesic config set crystal-store-token ghp_your_token
 geodesic crystals sync
 ```
 
-Crystals contain zero source code and zero PII — only structural fingerprints and reasoning patterns. Teams running Geodesic across multiple projects see compounding quality improvements as the Crystal Store grows.
+Crystals contain zero source code and zero PII — only structural fingerprints and reasoning patterns. Teams running Geodesic across multiple projects see compounding quality improvements as the store grows.
 
 ---
 
@@ -79,20 +122,18 @@ Crystals contain zero source code and zero PII — only structural fingerprints 
 
 ### VS Code, Cursor, Antigravity, VSCodium
 
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic) or [Open VSX Registry](https://open-vsx.org/extension/HyperPace/geodesic).
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic-topology-agent) or [Open VSX Registry](https://open-vsx.org/extension/HyperPace/geodesic-topology-agent).
 
 Or install from VSIX:
 ```bash
-code --install-extension geodesic-1.0.0.vsix
+code --install-extension geodesic-topology-agent-1.1.0.vsix
 ```
 
 The VSIX is self-contained — the analysis engine is bundled. No separate install required.
 
 ### JetBrains (IntelliJ, WebStorm, PyCharm, GoLand, Rider)
 
-Install from the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/geodesic-dev).
-
-Or install from disk: **Settings → Plugins → ⚙ → Install Plugin from Disk…**
+JetBrains plugin — **coming soon.** [Join the waitlist](https://github.com/hyperpaced/geodesic/issues/new?title=JetBrains+waitlist).
 
 ### CLI
 
@@ -122,11 +163,11 @@ open /path/to/your/repo/geodesic-findings/gap-report.md
 
 | Provider | Notes |
 |---|---|
-| Anthropic (Claude) | Recommended |
+| Anthropic (Claude) | Recommended — best gap report quality |
 | OpenAI (GPT-4o) | Fully supported |
 | Google Gemini | Fully supported |
 | Azure OpenAI | Enterprise deployments |
-| Ollama | Fully local — no API key, no network calls |
+| Ollama | Air-gapped — no API key, no network calls |
 
 Geodesic is provider-agnostic by design. Swap providers with a single config change.
 
@@ -190,4 +231,8 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-*Built by [HyperPace](https://github.com/hyperpaced)*
+> Geodesic is currently listed on the VS Code Marketplace and Open VSX as **Geodesic Topology Agent** while we wait for Microsoft to release the reserved `Geodesic` name. Same extension, same publisher (`HyperPace`), same code.
+
+---
+
+*Built by [HyperPace](https://github.com/hyperpaced).*

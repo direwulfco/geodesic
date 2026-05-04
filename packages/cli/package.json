@@ -2,7 +2,7 @@
   "name": "@geodesic/cli",
   "version": "1.0.0",
   "private": false,
-  "description": "Geodesic CLI — run topology analysis from the terminal or CI pipelines.",
+  "description": "Geodesic CLI — deep-scan any repo from the terminal or CI. Architecture map, agent skill file, and scored gap report — locally, in minutes.",
   "license": "MIT",
   "homepage": "https://github.com/hyperpaced/geodesic#readme",
   "repository": {
