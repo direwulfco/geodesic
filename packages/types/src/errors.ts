@@ -1,5 +1,6 @@
 export type ProviderErrorCode =
   | 'AUTH_FAILED'
+  | 'INSUFFICIENT_CREDITS'
   | 'RATE_LIMITED'
   | 'MODEL_NOT_FOUND'
   | 'CONTEXT_EXCEEDED'

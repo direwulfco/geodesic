@@ -83,8 +83,15 @@ export interface UncertainDetection {
   reviewedBy: string | null;
 }
 
+// HarvestResult is forward-declared in harvest.ts. We intentionally do not import it here
+// to avoid a circular dependency between the pii and harvest type modules.
 export interface InterceptResult {
-  scrubbedPayload: string;
+  // Scrubbed harvest object (mutated in place from the input harvest). Strings flagged by the
+  // detector have been replaced with attestation tokens. The caller should not retain a
+  // reference to the original harvest after intercept() returns — they share structural identity.
+  scrubbedHarvest: import('./harvest.js').HarvestResult;
+  // SHA-256 hash of the JSON-serialized scrubbed harvest, anchoring every attestation entry.
+  payloadHash: string;
   attestationEntries: AttestationEntry[];
   uncertainDetections: UncertainDetection[];
   piiCount: number;

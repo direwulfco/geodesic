@@ -76,9 +76,21 @@ async function getRemoteUrl(dir: string): Promise<string | null> {
   return result.success ? result.stdout : null;
 }
 
+function normalizeRemoteUrl(url: string): string {
+  // Strip embedded token auth so comparison works against the plain configured URL
+  return url.replace(/^https:\/\/[^@]+@/, 'https://');
+}
+
 async function ensureRemote(dir: string, config?: CrystalSyncConfig): Promise<boolean> {
   const existing = await getRemoteUrl(dir);
-  if (existing) return true;
+  if (existing) {
+    if (!config?.crystalStoreRepo) return true;
+    // Replace stale/local/temp origins so they never block a real push
+    if (normalizeRemoteUrl(existing) !== normalizeRemoteUrl(config.crystalStoreRepo)) {
+      await git(dir, ['remote', 'set-url', 'origin', config.crystalStoreRepo]);
+    }
+    return true;
+  }
   if (!config?.crystalStoreRepo) return false;
   // Always add the clean URL — token is never stored in .git/config
   const result = await git(dir, ['remote', 'add', 'origin', config.crystalStoreRepo]);
@@ -237,7 +249,9 @@ export async function pushCrystals(
     return { success: true, requiresAction: false, message: 'Crystal saved locally (no Crystal Store configured)' };
   }
 
-  const pushArgs = [...tokenArgs(config), 'push'];
+  const branchResult = await git(crystalsDir, ['rev-parse', '--abbrev-ref', 'HEAD']);
+  const branch = branchResult.success && branchResult.stdout ? branchResult.stdout : 'main';
+  const pushArgs = [...tokenArgs(config), 'push', '--set-upstream', 'origin', branch];
 
   const pushResult = await git(crystalsDir, pushArgs);
   if (!pushResult.success) {

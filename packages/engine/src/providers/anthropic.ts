@@ -56,6 +56,9 @@ export function createProvider(config: GeodesicConfig): AIProvider {
 
   const model = config.model ?? DEFAULT_MODEL;
   const extendedThinking = config.advanced?.extendedThinking === true;
+  // Prompt caching is GA — no beta header required. The `cache_control: { type: 'ephemeral' }`
+  // markers on the system message activate caching directly. Sending the legacy
+  // `anthropic-beta: prompt-caching-1` header now returns 400 ("Unexpected value(s)").
   const client = new Anthropic({ apiKey: config.apiKey });
 
   return {
@@ -143,15 +146,45 @@ export function createEchoProvider(config: GeodesicConfig): AIProvider {
 
 function mapError(provider: string, err: unknown): ProviderError {
   if (err instanceof Anthropic.APIError) {
-    if (err.status === 401) return new ProviderError(provider, 'AUTH_FAILED', err.message, false);
-    if (err.status === 429) return new ProviderError(provider, 'RATE_LIMITED', err.message, true);
-    if (err.status === 404) return new ProviderError(provider, 'MODEL_NOT_FOUND', err.message, false);
-    if (err.status === 413 || err.message.includes('context')) {
-      return new ProviderError(provider, 'CONTEXT_EXCEEDED', err.message, false);
+    const lower = err.message.toLowerCase();
+
+    // Billing errors come back as 400 invalid_request_error with "credit balance is too low"
+    if (lower.includes('credit balance') || lower.includes('credit_balance') || lower.includes('billing')) {
+      return new ProviderError(
+        provider,
+        'INSUFFICIENT_CREDITS',
+        'Anthropic: out of credits. Add billing at https://console.anthropic.com/settings/billing then retry.',
+        false,
+      );
+    }
+    if (err.status === 401) {
+      return new ProviderError(
+        provider,
+        'AUTH_FAILED',
+        'Anthropic: API key rejected. Get a new key at https://console.anthropic.com/settings/keys and re-run "Configure AI Provider".',
+        false,
+      );
+    }
+    if (err.status === 429) {
+      return new ProviderError(
+        provider,
+        'RATE_LIMITED',
+        'Anthropic: rate limited — too many requests. The engine will retry automatically; if it persists, wait a minute and re-run.',
+        true,
+      );
+    }
+    if (err.status === 404) {
+      return new ProviderError(provider, 'MODEL_NOT_FOUND', `Anthropic: model not found — ${err.message}`, false);
+    }
+    if (err.status === 413 || lower.includes('context')) {
+      return new ProviderError(provider, 'CONTEXT_EXCEEDED', `Anthropic: context window exceeded for this repo. Try a smaller subset.`, false);
+    }
+    if (err.status === 400) {
+      return new ProviderError(provider, 'UNKNOWN', `Anthropic rejected the request: ${err.message}`, false);
     }
   }
-  if (err instanceof Error && (err.message.includes('ECONNREFUSED') || err.message.includes('fetch'))) {
-    return new ProviderError(provider, 'NETWORK_ERROR', err.message, true);
+  if (err instanceof Error && (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND') || err.message.includes('fetch'))) {
+    return new ProviderError(provider, 'NETWORK_ERROR', `Anthropic: network error — ${err.message}. Check your internet connection.`, true);
   }
-  return new ProviderError(provider, 'UNKNOWN', String(err), false);
+  return new ProviderError(provider, 'UNKNOWN', err instanceof Error ? err.message : String(err), false);
 }

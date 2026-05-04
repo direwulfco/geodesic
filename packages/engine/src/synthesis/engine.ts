@@ -69,6 +69,17 @@ interface SubsystemResult {
   status: 'deep' | 'shallow';
 }
 
+// Structured events that map cleanly onto the pipeline's phase tree. Less ambiguous
+// than parsing onProgress strings — the pipeline switches on `event.type` and updates
+// the corresponding phase / subtask without string matching.
+export type SynthesisPhaseEvent =
+  | { type: 'discovery_started' }
+  | { type: 'discovery_complete'; subsystemCount: number; subsystemNames: string[]; subsystems: Array<{ id: string; name: string }> }
+  | { type: 'deep_dive_started'; subsystemId: string; name: string }
+  | { type: 'deep_dive_complete'; subsystemId: string; name: string; status: 'deep' | 'shallow'; completed: number; total: number }
+  | { type: 'deep_dives_complete'; total: number }
+  | { type: 'artifacts_complete' };
+
 export interface SynthesisOptions {
   harvest: HarvestResult;
   crystal: Crystal | null;
@@ -79,6 +90,8 @@ export interface SynthesisOptions {
   repo: string;
   repoCommit: string;
   onWarning?: (msg: string) => void;
+  onProgress?: (msg: string) => void;
+  onPhaseEvent?: (event: SynthesisPhaseEvent) => void;
 }
 
 type ArtifactMeta = {
@@ -186,6 +199,7 @@ async function analyzeSubsystem(
   discoveryContext: string,
   provider: AIProvider,
   systemPrompt: string,
+  onProgress?: (msg: string) => void,
 ): Promise<SubsystemResult> {
   const slice = sliceByPrefixes(harvest, spec.filePrefixes);
   const prompt = buildDeepDivePromptWithPrefixes(spec.name, spec.focusAreas, spec.filePrefixes, slice, discoveryContext);
@@ -197,6 +211,7 @@ async function analyzeSubsystem(
         DEEP_DIVE_TIMEOUT_MS,
         `deep-dive: ${spec.name} (attempt ${String(attempt)})`,
       );
+      onProgress?.(`Analyzed: ${spec.name}`);
       process.stderr.write(`[geodesic] deep-dive "${spec.name}": complete\n`);
       return { name: spec.name, analysis: result.content, tokensUsed: result.inputTokens + result.outputTokens, status: 'deep' };
     } catch (err) {
@@ -204,6 +219,7 @@ async function analyzeSubsystem(
     }
   }
 
+  onProgress?.(`Analyzed: ${spec.name} (summary fallback)`);
   process.stderr.write(`[geodesic] deep-dive "${spec.name}": raw fallback\n`);
   return { name: spec.name, analysis: buildRawFallbackSummary(spec.name, slice), tokensUsed: 0, status: 'shallow' };
 }
@@ -313,26 +329,67 @@ async function runArtifacts(
 
 // ─── Main Entry Point ─────────────────────────────────────────────────────────
 
+// Stable, deterministic ID for a subsystem subtask (used by the pipeline to track
+// which subsystem is currently running in the deep-dives phase tree).
+function subsystemSubtaskId(name: string, index: number): string {
+  // Slug + index disambiguates if two subsystems share a name (rare, but possible).
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `dd-${String(index)}-${slug}`;
+}
+
 export async function synthesize(options: SynthesisOptions): Promise<SynthesisResult> {
-  const { harvest, crystal, crystalMatchScore, provider, echoProvider, analystId, repo, repoCommit, onWarning } = options;
+  const { harvest, crystal, crystalMatchScore, provider, echoProvider, analystId, repo, repoCommit, onWarning, onProgress, onPhaseEvent } = options;
   const startedAt = Date.now();
   const crystalId = crystal?.crystalId ?? null;
   const meta: ArtifactMeta = { analystId, repo, repoCommit, crystalId, crystalMatchScore, provider: provider.name, model: provider.defaultModel };
   const systemPrompt = buildSystemPrompt();
 
   // Stage 1 — Discovery
+  onProgress?.('AI Discovery: mapping subsystem boundaries…');
+  onPhaseEvent?.({ type: 'discovery_started' });
   process.stderr.write('[geodesic] synthesis 1/3: discovery…\n');
   const discovery = await runDiscovery(harvest, echoProvider, systemPrompt);
   let totalTokens = discovery.tokensUsed;
 
+  const subsystemEntries = discovery.subsystems.map((s, i) => ({
+    spec: s,
+    id: subsystemSubtaskId(s.name, i),
+  }));
+  const subsystemList = discovery.subsystems.map(s => s.name).join(', ');
+  onProgress?.(`Discovery complete: ${String(discovery.subsystems.length)} subsystems — ${subsystemList}`);
+  onPhaseEvent?.({
+    type: 'discovery_complete',
+    subsystemCount: discovery.subsystems.length,
+    subsystemNames: discovery.subsystems.map(s => s.name),
+    subsystems: subsystemEntries.map(e => ({ id: e.id, name: e.spec.name })),
+  });
+
   // Stage 2 — Deep Dives
-  process.stderr.write(`[geodesic] synthesis 2/3: deep dives (${String(discovery.subsystems.length)} subsystems)…\n`);
+  const total = subsystemEntries.length;
+  let completed = 0;
+  process.stderr.write(`[geodesic] synthesis 2/3: deep dives (${String(total)} subsystems)…\n`);
+
   const deepResults = await pMap(
-    discovery.subsystems,
-    spec => analyzeSubsystem(spec, harvest, discovery.context, provider, systemPrompt),
+    subsystemEntries,
+    async (entry) => {
+      onPhaseEvent?.({ type: 'deep_dive_started', subsystemId: entry.id, name: entry.spec.name });
+      onProgress?.(`Deep dive: ${entry.spec.name}`);
+      const result = await analyzeSubsystem(entry.spec, harvest, discovery.context, provider, systemPrompt, onProgress);
+      completed++;
+      onPhaseEvent?.({
+        type: 'deep_dive_complete',
+        subsystemId: entry.id,
+        name: entry.spec.name,
+        status: result.status,
+        completed,
+        total,
+      });
+      return result;
+    },
     DEEP_DIVE_CONCURRENCY,
   );
   totalTokens += deepResults.reduce((s, r) => s + r.tokensUsed, 0);
+  onPhaseEvent?.({ type: 'deep_dives_complete', total });
 
   const shallowCount = deepResults.filter(r => r.status === 'shallow').length;
   if (shallowCount > 0) {
@@ -342,9 +399,11 @@ export async function synthesize(options: SynthesisOptions): Promise<SynthesisRe
   }
 
   // Stage 3 — Artifacts
+  onProgress?.('Generating architecture map, skill file, and gap report in parallel…');
   process.stderr.write('[geodesic] synthesis 3/3: generating artifacts…\n');
   const artifacts = await runArtifacts(harvest, crystal, meta, deepResults, discovery.context, provider, systemPrompt);
   totalTokens += artifacts.tokensUsed;
+  onPhaseEvent?.({ type: 'artifacts_complete' });
 
   return parseSynthesisResponse(
     { archMap: artifacts.archMap, skillFile: artifacts.skillFile, gapReport: artifacts.gapReport },

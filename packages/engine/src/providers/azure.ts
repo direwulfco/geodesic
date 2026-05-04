@@ -173,15 +173,50 @@ export function createEchoProvider(config: GeodesicConfig): AIProvider {
 
 function mapError(provider: string, err: unknown): ProviderError {
   if (err instanceof AzureOpenAI.APIError) {
-    if (err.status === 401) return new ProviderError(provider, 'AUTH_FAILED', err.message, false);
-    if (err.status === 429) return new ProviderError(provider, 'RATE_LIMITED', err.message, true);
-    if (err.status === 404) return new ProviderError(provider, 'MODEL_NOT_FOUND', err.message, false);
-    if (err.status === 400 && err.message.includes('context')) {
-      return new ProviderError(provider, 'CONTEXT_EXCEEDED', err.message, false);
+    const lower = err.message.toLowerCase();
+    const code = (err as { code?: string }).code ?? '';
+
+    if (
+      code === 'insufficient_quota' ||
+      lower.includes('quota') ||
+      lower.includes('billing') ||
+      lower.includes('subscription')
+    ) {
+      return new ProviderError(
+        provider,
+        'INSUFFICIENT_CREDITS',
+        'Azure OpenAI: quota exhausted or subscription issue. Check Azure portal billing then retry.',
+        false,
+      );
+    }
+    if (err.status === 401) {
+      return new ProviderError(
+        provider,
+        'AUTH_FAILED',
+        'Azure OpenAI: API key rejected. Verify your key in the Azure portal and re-run "Configure AI Provider".',
+        false,
+      );
+    }
+    if (err.status === 429) {
+      return new ProviderError(
+        provider,
+        'RATE_LIMITED',
+        'Azure OpenAI: rate limited — too many requests. The engine will retry automatically.',
+        true,
+      );
+    }
+    if (err.status === 404) {
+      return new ProviderError(provider, 'MODEL_NOT_FOUND', `Azure OpenAI: deployment not found — ${err.message}. Check your deployment name.`, false);
+    }
+    if (err.status === 400 && lower.includes('context')) {
+      return new ProviderError(provider, 'CONTEXT_EXCEEDED', 'Azure OpenAI: context window exceeded for this repo. Try a smaller subset.', false);
+    }
+    if (err.status === 400) {
+      return new ProviderError(provider, 'UNKNOWN', `Azure OpenAI rejected the request: ${err.message}`, false);
     }
   }
-  if (err instanceof Error && (err.message.includes('ECONNREFUSED') || err.message.includes('fetch'))) {
-    return new ProviderError(provider, 'NETWORK_ERROR', err.message, true);
+  if (err instanceof Error && (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND') || err.message.includes('fetch'))) {
+    return new ProviderError(provider, 'NETWORK_ERROR', `Azure OpenAI: network error — ${err.message}. Check your endpoint URL and internet connection.`, true);
   }
-  return new ProviderError(provider, 'UNKNOWN', String(err), false);
+  return new ProviderError(provider, 'UNKNOWN', err instanceof Error ? err.message : String(err), false);
 }

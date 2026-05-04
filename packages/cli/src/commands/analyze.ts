@@ -190,7 +190,8 @@ async function analyzeRepo(
       }
     }
 
-    const scrubbedHarvest = JSON.parse(interceptResult.scrubbedPayload) as HarvestResult;
+    // intercept() mutated harvestResult in place; scrubbedHarvest is the same object reference.
+    const scrubbedHarvest = interceptResult.scrubbedHarvest;
 
     // Stage 3: Crystal query
     console.log('[geodesic] stage 3/6: querying Crystal Store…');

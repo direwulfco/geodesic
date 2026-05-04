@@ -53,11 +53,17 @@ describe('intercept — clean harvest', () => {
     expect(result.secretCount).toBe(0);
   });
 
-  it('returns a valid JSON scrubbed payload', () => {
+  it('returns the scrubbed harvest object and a payload hash', () => {
     const result = intercept(makeMinimalHarvest(), CTX);
-    let parsed: unknown;
-    expect(() => { parsed = JSON.parse(result.scrubbedPayload); }).not.toThrow();
-    expect(parsed).toBeDefined();
+    expect(result.scrubbedHarvest).toBeDefined();
+    expect(result.scrubbedHarvest.meta.repoName).toBe('clean-repo');
+    expect(result.payloadHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  it('mutates the input harvest in place (same object identity)', () => {
+    const harvest = makeMinimalHarvest();
+    const result = intercept(harvest, CTX);
+    expect(result.scrubbedHarvest).toBe(harvest);
   });
 });
 
@@ -77,8 +83,7 @@ describe('intercept — PII in harvest values', () => {
     expect(result.purityVerified).toBe(true);
     expect(result.attestationEntries.length).toBeGreaterThan(0);
 
-    const parsed = JSON.parse(result.scrubbedPayload) as { envVars: Array<{ inferredPurpose: string }> };
-    const purpose = parsed.envVars[0]?.inferredPurpose ?? '';
+    const purpose = result.scrubbedHarvest.envVars[0]?.inferredPurpose ?? '';
     expect(purpose).not.toContain('@hospital.org');
     expect(purpose).toMatch(/\[PHI:EMAIL:ref:[a-z0-9]{4}:CONF:HIGH\]/);
   });
@@ -96,8 +101,7 @@ describe('intercept — PII in harvest values', () => {
 
     const result = intercept(harvest, CTX);
     expect(result.purityVerified).toBe(true);
-    const parsed = JSON.parse(result.scrubbedPayload) as { envVars: Array<{ inferredPurpose: string }> };
-    expect(parsed.envVars[0]?.inferredPurpose).not.toContain('hunter2');
+    expect(result.scrubbedHarvest.envVars[0]?.inferredPurpose).not.toContain('hunter2');
     expect(result.secretCount).toBeGreaterThan(0);
   });
 

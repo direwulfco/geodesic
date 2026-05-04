@@ -22,6 +22,15 @@ import {
   updateJobProgress,
   completeJob,
   failJob,
+  startPhase,
+  completePhase,
+  failPhase,
+  setPhaseBadge,
+  addSubtask,
+  addPendingSubtask,
+  startSubtask,
+  completeSubtask,
+  failSubtask,
   type AnalysisJob,
   type JobResult,
 } from './jobs.js';
@@ -90,15 +99,18 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
   } catch { /* non-fatal — downstream writes will retry mkdirSync */ }
 
   try {
-    // 1. Harvest — with live progress events
-    updateJobProgress(jobId, { status: 'harvesting', stage: 'Phase 1/4 — Building file catalog…' });
+    // ─── Phase 1: Harvest ──────────────────────────────────────────────────
+    updateJobProgress(jobId, { status: 'harvesting', stage: 'Building file catalog…' });
+    startPhase(jobId, 'harvest');
 
     const onHarvestProgress = (event: PhaseProgressEvent): void => {
-      if (event.type === 'phase_start' || event.type === 'phase_complete') {
+      if (event.type === 'phase_start') {
         updateJobProgress(jobId, { stage: event.message });
+      } else if (event.type === 'phase_complete') {
+        updateJobProgress(jobId, { stage: event.message });
+        addSubtask(jobId, 'harvest', event.message);
       } else if (event.type === 'discovery_finding') {
-        updateJobProgress(jobId, { stage: event.message });
-        process.stderr.write(`[geodesic] ${event.message}\n`);
+        addSubtask(jobId, 'harvest', event.message);
       } else if (event.type === 'file_error') {
         writeErrorLog(outputDir, 'harvest-file-error', new Error(event.message));
       } else if (event.type === 'warning') {
@@ -108,30 +120,38 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
     };
 
     const harvestResult: HarvestResult = harvest(repoPath, onHarvestProgress);
+    completePhase(jobId, 'harvest', `${String(harvestResult.meta.totalFiles)} files`);
 
-    // 2. PII/HIPAA Intercept
-    updateJobProgress(jobId, { status: 'scrubbing', stage: 'Scrubbing PII/PHI…' });
+    // ─── Phase 2: PII/HIPAA Intercept ──────────────────────────────────────
+    updateJobProgress(jobId, { status: 'scrubbing', stage: 'PII/HIPAA intercept running…' });
+    startPhase(jobId, 'scrub');
+
     const interceptResult = intercept(harvestResult, {
       analystId: config.analystId,
       repo: repoName,
       repoCommit: harvestResult.meta.repoCommit ?? 'unknown',
     });
 
-    // Write compliance artifact immediately — stored outside the analyzed repo, never committed
     const attestationTs = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
     const attestationDir = path.join(os.homedir(), '.geodesic', 'attestations');
     const attestationPath = path.join(attestationDir, `${repoName}-${attestationTs}.jsonl`);
     writeAttestationChain(attestationPath, interceptResult.attestationEntries);
 
-    const scrubbedHarvest = JSON.parse(interceptResult.scrubbedPayload) as HarvestResult;
+    // Intercept mutated the original harvest in place — `scrubbedHarvest` is the same object,
+    // now containing attestation tokens.
+    const scrubbedHarvest = interceptResult.scrubbedHarvest;
 
-    updateJobProgress(jobId, {
-      phiZoneCount: interceptResult.phiCount,
-      stage: `Scrubbing complete — ${String(interceptResult.phiCount)} PHI, ${String(interceptResult.piiCount)} PII, ${String(interceptResult.secretCount)} secrets found`,
-    });
+    const scrubSummary = `${String(interceptResult.phiCount)} PHI · ${String(interceptResult.piiCount)} PII · ${String(interceptResult.secretCount)} secrets scrubbed`;
+    addSubtask(jobId, 'scrub', scrubSummary);
+    addSubtask(jobId, 'scrub', `Attestation anchored · ${interceptResult.payloadHash.slice(0, 14)}…`);
+    addSubtask(jobId, 'scrub', 'Purity verified');
+    updateJobProgress(jobId, { phiZoneCount: interceptResult.phiCount, stage: scrubSummary });
+    completePhase(jobId, 'scrub');
 
-    // 3. Crystal query
+    // ─── Phase 3: Crystal Query ────────────────────────────────────────────
     updateJobProgress(jobId, { status: 'querying-crystal', stage: 'Querying Crystal Store…' });
+    startPhase(jobId, 'crystal-query');
+
     const fingerprint = computeFingerprint(harvestResult);
     const crystalsDir = getCrystalsDir(undefined);
     const store = new CrystalStore(crystalsDir);
@@ -148,16 +168,19 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
       : queryResult.matchType === 'fuzzy' ? 'hit'
       : 'cold-start';
 
+    const crystalSummary = queryResult.crystal
+      ? `Crystal hit · ${String(Math.round(queryResult.matchScore * 100))}% match — prior analysis pre-loaded`
+      : 'Cold start — building from scratch';
+    addSubtask(jobId, 'crystal-query', crystalSummary);
     updateJobProgress(jobId, {
       crystalMatch,
       crystalMatchScore: queryResult.matchScore > 0 ? queryResult.matchScore : null,
-      stage: queryResult.crystal
-        ? `Crystal hit: ${fingerprint} (${String(Math.round(queryResult.matchScore * 100))}% match)`
-        : 'No matching Crystal — cold-start analysis',
+      stage: crystalSummary,
     });
+    completePhase(jobId, 'crystal-query', queryResult.crystal ? 'hit' : 'cold start');
 
-    // 4. AI Synthesis
-    updateJobProgress(jobId, { status: 'synthesizing', stage: 'Synthesizing with AI…' });
+    // ─── Phases 4–6: AI Synthesis (discovery, deep dives, artifacts) ───────
+    updateJobProgress(jobId, { status: 'synthesizing', stage: 'AI synthesis starting…' });
     const provider = await loadProvider(config);
     const echoProvider = await loadEchoProvider(config);
 
@@ -172,15 +195,64 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
       repoCommit: harvestResult.meta.repoCommit ?? 'unknown',
       onWarning: (msg) => {
         updateJobProgress(jobId, { stage: `⚠ ${msg}` });
-        writeErrorLog(outputDir, 'synthesis-warning', new Error(msg));
+        // Warnings are non-fatal — the job continues. Don't pollute geodesic-error.log.
+      },
+      onProgress: (msg) => {
+        updateJobProgress(jobId, { stage: msg });
+      },
+      onPhaseEvent: (event) => {
+        // Synthesis emits structured events that map cleanly onto our phase tree.
+        // See engine.ts for the contract.
+        switch (event.type) {
+          case 'discovery_started':
+            startPhase(jobId, 'discovery');
+            break;
+          case 'discovery_complete':
+            addSubtask(jobId, 'discovery', `${String(event.subsystemCount)} subsystems identified`, event.subsystemNames.join(', '));
+            completePhase(jobId, 'discovery', `${String(event.subsystemCount)} subsystems`);
+            // Pre-populate deep-dives with one pending subtask per subsystem so the
+            // user can see all 8 lined up before any of them runs.
+            startPhase(jobId, 'deep-dives');
+            setPhaseBadge(jobId, 'deep-dives', `0/${String(event.subsystemCount)}`);
+            for (const sub of event.subsystems) {
+              addPendingSubtask(jobId, 'deep-dives', sub.id, sub.name);
+            }
+            break;
+          case 'deep_dive_started':
+            startSubtask(jobId, 'deep-dives', event.subsystemId);
+            break;
+          case 'deep_dive_complete':
+            completeSubtask(jobId, 'deep-dives', event.subsystemId,
+              event.status === 'shallow' ? 'fallback (raw harvest)' : undefined);
+            setPhaseBadge(jobId, 'deep-dives', `${String(event.completed)}/${String(event.total)}`);
+            break;
+          case 'deep_dives_complete':
+            completePhase(jobId, 'deep-dives', `${String(event.total)} subsystems`);
+            startPhase(jobId, 'artifacts');
+            // Three artifacts run in parallel — show them all so devs see the parallelism.
+            addPendingSubtask(jobId, 'artifacts', 'arch-map',  'Architecture map');
+            addPendingSubtask(jobId, 'artifacts', 'skill',     'Skill file');
+            addPendingSubtask(jobId, 'artifacts', 'gap',       'Gap report');
+            startSubtask(jobId, 'artifacts', 'arch-map');
+            startSubtask(jobId, 'artifacts', 'skill');
+            startSubtask(jobId, 'artifacts', 'gap');
+            break;
+          case 'artifacts_complete':
+            completeSubtask(jobId, 'artifacts', 'arch-map');
+            completeSubtask(jobId, 'artifacts', 'skill');
+            completeSubtask(jobId, 'artifacts', 'gap');
+            completePhase(jobId, 'artifacts');
+            break;
+        }
       },
     });
 
-    // 5. Write artifacts
+    // ─── Phase 7: Write artifacts to disk + Crystal Extraction ─────────────
     updateJobProgress(jobId, { status: 'writing', stage: 'Writing analysis artifacts…' });
     const artifactPaths = writeArtifacts(synthesis, outputDir);
+    addSubtask(jobId, 'artifacts', `Written to ${path.basename(outputDir)}/`, outputDir);
 
-    // 6. Crystal extraction & push
+    startPhase(jobId, 'crystal-extraction');
     const extraction = extractCrystal({
       fingerprint,
       existing: queryResult.crystal,
@@ -189,12 +261,32 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
 
     if (extraction.purityPassed) {
       store.write(extraction.crystal);
+      addSubtask(jobId, 'crystal-extraction', 'Purity verified · Crystal written locally');
       if (!(config.advanced?.noCrystalSync)) {
         const pushResult = await pushCrystals(crystalsDir, extraction.crystal, config);
-        if (!pushResult.success) {
+        if (pushResult.success) {
+          addSubtask(jobId, 'crystal-extraction', 'Pushed to shared store');
+        } else {
+          addSubtask(jobId, 'crystal-extraction', `Push deferred: ${pushResult.message}`);
           process.stderr.write(`[geodesic] crystal push: ${pushResult.message}\n`);
         }
       }
+      completePhase(jobId, 'crystal-extraction');
+    } else {
+      failPhase(jobId, 'crystal-extraction', 'purity failed');
+    }
+
+    // Validate all required synthesis fields are present before marking complete.
+    // A partial result is useless — fail loudly so the user knows to retry.
+    const missing: string[] = [];
+    if (!synthesis.architectureMapMarkdown) missing.push('architecture map');
+    if (!synthesis.gapReport) missing.push('gap report');
+    if (!synthesis.skillFile) missing.push('skill file');
+    if (missing.length > 0) {
+      const msg = `Synthesis incomplete — AI failed to produce: ${missing.join(', ')}. Check your API quota and retry.`;
+      writeErrorLog(outputDir, 'synthesis-incomplete', new Error(msg));
+      failJob(jobId, msg);
+      return;
     }
 
     const result: JobResult = {

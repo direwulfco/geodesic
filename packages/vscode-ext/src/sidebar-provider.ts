@@ -117,8 +117,41 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
   .empty-state { font-size: 11px; color: var(--vscode-descriptionForeground); font-style: italic; padding: 6px 0; }
 
   /* Progress */
-  .progress-bar { height: 3px; background: var(--vscode-progressBar-background); width: 0%; border-radius: 2px; margin-top: 6px; transition: width 0.4s; }
-  .progress-stage { font-size: 11px; color: var(--vscode-descriptionForeground); margin-top: 5px; }
+  .progress-section { background: var(--vscode-textBlockQuote-background); border-radius: 3px; padding: 10px 10px 12px; margin-top: 10px; border-left: 2px solid var(--vscode-progressBar-background); }
+  .progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .progress-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--vscode-progressBar-background); }
+  .progress-elapsed { font-size: 10px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
+  .progress-bar-track { height: 2px; background: rgba(128,128,128,0.2); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--vscode-progressBar-background); border-radius: 2px; transition: width 0.5s ease; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+  /* Phase tree */
+  .phase-tree { display: flex; flex-direction: column; gap: 2px; }
+  .phase { display: flex; flex-direction: column; }
+  .phase-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: 2px; cursor: pointer; user-select: none; }
+  .phase-row:hover { background: var(--vscode-list-hoverBackground); }
+  .phase-glyph { width: 12px; text-align: center; font-size: 11px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .phase-glyph.running { color: var(--vscode-progressBar-background); animation: pulse 1.2s ease-in-out infinite; }
+  .phase-glyph.spinning { display: inline-block; animation: spin 1.2s linear infinite; }
+  .phase-name { font-size: 11px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .phase-name.pending { color: var(--vscode-descriptionForeground); font-weight: 500; }
+  .phase-name.failed { color: var(--vscode-charts-red, #f44336); }
+  .phase-badge { font-size: 9px; color: var(--vscode-descriptionForeground); padding: 1px 5px; border-radius: 2px; background: rgba(128,128,128,0.15); font-variant-numeric: tabular-nums; }
+  .phase-duration { font-size: 9px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .phase-caret { font-size: 9px; color: var(--vscode-descriptionForeground); width: 10px; text-align: center; flex-shrink: 0; }
+
+  .subtask-list { display: flex; flex-direction: column; gap: 1px; padding: 2px 0 4px 22px; border-left: 1px solid var(--vscode-sideBar-border, rgba(128,128,128,0.15)); margin-left: 9px; }
+  .subtask { display: flex; align-items: flex-start; gap: 5px; font-size: 10px; line-height: 1.4; padding: 1px 4px; }
+  .subtask-glyph { width: 10px; text-align: center; flex-shrink: 0; font-size: 10px; }
+  .subtask-glyph.complete { color: var(--vscode-charts-green, #4caf50); }
+  .subtask-glyph.running { color: var(--vscode-progressBar-background); animation: pulse 1.2s ease-in-out infinite; }
+  .subtask-glyph.pending { color: var(--vscode-descriptionForeground); opacity: 0.6; }
+  .subtask-glyph.failed { color: var(--vscode-charts-red, #f44336); }
+  .subtask-label { color: var(--vscode-foreground); flex: 1; min-width: 0; word-break: break-word; }
+  .subtask-label.pending { color: var(--vscode-descriptionForeground); }
+  .subtask-detail { color: var(--vscode-descriptionForeground); font-size: 9px; margin-left: 4px; }
+  .subtask-duration { font-size: 9px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; flex-shrink: 0; margin-left: 4px; }
 
   /* Crystal chip */
   .crystal-row { display: flex; align-items: center; justify-content: space-between; }
@@ -188,6 +221,61 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     crystalConfigOpen: false,
   };
 
+  let elapsedTimer = null;
+  // Per-phase expansion overrides (user clicks). Keyed by phase id.
+  // Empty object → use default expansion rules (running/failed expanded, others collapsed).
+  const phaseExpansionOverrides = {};
+
+  // Pre-populated phase tree shown the moment the user clicks Scan. The first engine poll
+  // replaces it with the real phases array (same shape) within ~150ms, so the layout is
+  // already correct and only glyphs/durations transition — no layout jump.
+  function makeOptimisticPhases() {
+    return [
+      { id: 'harvest',            name: 'Harvest',            status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'scrub',              name: 'Scrub',              status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'crystal-query',      name: 'Crystal Query',      status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'discovery',          name: 'Discovery',          status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'deep-dives',         name: 'Deep Dives',         status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'artifacts',          name: 'Artifacts',          status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+      { id: 'crystal-extraction', name: 'Crystal Extraction', status: 'pending', startedAt: null, completedAt: null, durationMs: null, subtasks: [] },
+    ];
+  }
+
+  // Flip to running state instantly on click — no IPC round-trip required for visible feedback.
+  // Subsequent engine polls will overwrite this with real progress data.
+  function applyOptimisticRunning() {
+    state.running = true;
+    state.progress = {
+      status: 'queued',
+      stage: 'Starting analysis…',
+      phases: makeOptimisticPhases(),
+      startedAt: new Date().toISOString(),
+    };
+    startElapsedTimer();
+    render();
+  }
+
+  function formatElapsed(startedAt) {
+    if (!startedAt) return '0:00';
+    const secs = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return String(m) + ':' + (s < 10 ? '0' : '') + String(s);
+  }
+
+  function startElapsedTimer() {
+    stopElapsedTimer();
+    elapsedTimer = setInterval(function() {
+      const el = document.getElementById('elapsed-timer');
+      if (!el) return;
+      el.textContent = formatElapsed(state.progress && state.progress.startedAt);
+    }, 1000);
+  }
+
+  function stopElapsedTimer() {
+    if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+  }
+
   const API_KEY_URLS = {
     anthropic: 'https://console.anthropic.com/settings/keys',
     openai: 'https://platform.openai.com/api-keys',
@@ -203,32 +291,25 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
 
   function render() {
     const app = document.getElementById('app');
-    const { hasConfig, repos, running, configOpen } = state;
-    const hasRepos = repos.length > 0;
+    const { hasConfig, repos, running, configOpen, workspaceFolders } = state;
     let html = '';
 
-    // Status bar (always visible)
-    html += '<div class="status-bar">⚙ ' + esc(state.engineStatus) + '</div>';
+    if (!running) {
+      html += '<div class="status-bar">⚙ ' + esc(state.engineStatus) + '</div>';
+    }
 
     if (!hasConfig) {
       html += renderStep1(false);
-      html += renderStep2(false);
+      html += renderStepTwoLocked();
     } else if (configOpen) {
       html += renderStep1(true);
       html += '<button class="btn btn-secondary cancel-btn" data-action="closeConfig">✕ Cancel</button>';
-      html += renderRepos(hasRepos);
-      if (hasRepos && !running) html += renderScanButton(repos);
-    } else if (!hasRepos) {
-      html += renderConfigSummary();
-      html += renderStep2(true);
     } else if (running) {
       html += renderConfigSummary();
-      html += renderRepos(true);
       html += renderProgress();
     } else {
       html += renderConfigSummary();
-      html += renderRepos(true);
-      html += renderScanButton(repos);
+      html += renderMainAction(repos || [], workspaceFolders || []);
     }
 
     if (hasConfig && !configOpen) {
@@ -281,31 +362,32 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     return html;
   }
 
-  function renderStep2(isActive) {
-    let html = '<div class="step-card' + (!isActive ? ' locked' : '') + '">';
-    html += '<div class="step-header"><span class="step-num">2</span><span class="step-title">Select Repository</span></div>';
+  function renderStepTwoLocked() {
+    return '<div class="step-card locked"><div class="step-header"><span class="step-num">2</span><span class="step-title">Select Repository</span></div><div class="empty-state">Complete step 1 first.</div></div>';
+  }
 
-    if (!isActive) {
-      html += '<div class="empty-state">Complete step 1 first.</div>';
-    } else {
-      const wsFolders = state.workspaceFolders || [];
-      if (wsFolders.length > 0) {
-        html += '<div class="ws-label">Workspace detected:</div>';
-        html += '<div class="repo-select-actions">';
-        for (const ws of wsFolders) {
-          // One-click: adds repo + starts scan
-          html += '<button class="btn btn-primary scan-btn full-width" data-scan-path="' + esc(ws.path) + '" data-scan-name="' + esc(ws.name) + '">';
-          html += '⚡ Scan &quot;' + esc(ws.name) + '&quot;';
-          html += '</button>';
-        }
-        html += '<button class="btn btn-ghost full-width change-repo-btn" data-action="addRepo">Change Repo</button>';
-        html += '</div>';
-      } else {
-        html += '<button class="btn btn-ghost full-width browse-repo-btn" data-action="addRepo">+ Browse for a repository…</button>';
+  function renderMainAction(repos, workspaceFolders) {
+    let html = '';
+    if (repos.length === 1) {
+      html += '<button class="btn btn-primary scan-btn full-width" data-action="runAnalysis">⚡ Scan &quot;' + esc(repos[0].label) + '&quot;</button>';
+      html += '<div style="margin-top:8px;text-align:center;"><button class="btn-link" data-action="addRepo">Change Repo</button></div>';
+    } else if (repos.length > 1) {
+      html += '<h3>Repositories</h3>';
+      for (const r of repos) {
+        html += '<div class="repo-item"><div><div class="repo-label" title="' + esc(r.path) + '">' + esc(r.label) + '</div>';
+        html += '<div class="repo-path">' + esc(r.path) + '</div></div>';
+        html += '<button class="btn-icon" data-remove="' + esc(r.path) + '" title="Remove">✕</button></div>';
       }
+      html += '<div class="add-repo-row"><button class="btn btn-ghost add-repo-btn" data-action="addRepo">+ Add Repo</button></div>';
+      html += '<hr class="divider"><button class="btn btn-primary scan-btn full-width" data-action="runAnalysis">⚡ Start Scan (' + String(repos.length) + ' repos)</button>';
+    } else if (workspaceFolders.length > 0) {
+      for (const ws of workspaceFolders) {
+        html += '<button class="btn btn-primary scan-btn full-width" data-scan-path="' + esc(ws.path) + '" data-scan-name="' + esc(ws.name) + '">⚡ Scan &quot;' + esc(ws.name) + '&quot;</button>';
+      }
+      html += '<div style="margin-top:8px;text-align:center;"><button class="btn-link" data-action="addRepo">Browse for a different repo…</button></div>';
+    } else {
+      html += '<button class="btn btn-ghost full-width browse-repo-btn" data-action="addRepo">+ Browse for a repository…</button>';
     }
-
-    html += '</div>';
     return html;
   }
 
@@ -322,44 +404,134 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
       '</div>';
   }
 
-  function renderRepos(hasRepos) {
-    const repos = state.repos || [];
-    let html = '<h3>Repositories</h3>';
-    if (!hasRepos || repos.length === 0) {
-      html += '<div class="empty-state">No repositories. Add one above.</div>';
-    } else {
-      for (const r of repos) {
-        html += '<div class="repo-item">';
-        html += '<div><div class="repo-label" title="' + esc(r.path) + '">' + esc(r.label) + '</div>';
-        html += '<div class="repo-path">' + esc(r.path) + '</div></div>';
-        html += '<button class="btn-icon" data-remove="' + esc(r.path) + '" title="Remove">✕</button>';
-        html += '</div>';
-      }
-    }
-    html += '<div class="add-repo-row"><button class="btn btn-ghost add-repo-btn" data-action="addRepo">Change Repo</button></div>';
-    return html;
-  }
-
-  function renderScanButton(repos) {
-    const count = repos.length;
-    const label = '⚡ Start Scan' + (count > 0 ? ' (' + String(count) + ' repo' + (count !== 1 ? 's' : '') + ')' : '');
-    return '<hr class="divider"><button class="btn btn-primary scan-btn full-width" data-action="runAnalysis">' + label + '</button>';
-  }
-
   function renderProgress() {
     const prog = state.progress || {};
-    let html = '<hr class="divider">';
-    html += '<div class="progress-stage">▶ ' + esc(prog.stage || 'Running…') + '</div>';
-    if (prog.phiZoneCount > 0) {
-      html += '<div class="phi-warning">⚠ ' + String(prog.phiZoneCount) + ' PHI zone' + (prog.phiZoneCount !== 1 ? 's' : '') + ' detected</div>';
+    const phases = Array.isArray(prog.phases) ? prog.phases : [];
+    const pct = computeProgressPercent(phases, prog.status);
+
+    let html = '<div class="progress-section">';
+
+    // Header: title + elapsed computed from startedAt
+    html += '<div class="progress-header">';
+    html += '<span class="progress-title">Analysis in Progress</span>';
+    html += '<span class="progress-elapsed" id="elapsed-timer">' + formatElapsed(prog.startedAt) + '</span>';
+    html += '</div>';
+
+    // Real progress bar — fraction of phases complete + fractional credit for running phase.
+    html += '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + String(pct) + '%"></div></div>';
+
+    // Current stage line (single-line summary for the impatient)
+    if (prog.stage) {
+      html += '<div class="progress-current"><span>' + esc(prog.stage) + '</span></div>';
     }
-    if (prog.crystalMatch) {
-      const icon = prog.crystalMatch === 'cold-start' ? '❄' : '💎';
-      const score = prog.crystalMatchScore ? ' (' + String(Math.round(prog.crystalMatchScore * 100)) + '%)' : '';
-      html += '<div class="crystal-info">' + icon + ' ' + esc(prog.crystalMatch) + score + '</div>';
-    }
-    html += '<div class="progress-bar" style="width:' + String(progressWidth(prog.status)) + '%"></div>';
+
+    // Phase tree — the hierarchical view
+    html += renderPhaseTree(phases);
+
+    html += '</div>';
     return html;
+  }
+
+  function renderPhaseTree(phases) {
+    if (!phases || phases.length === 0) return '';
+
+    let html = '<div class="phase-tree">';
+    for (const phase of phases) {
+      const isExpanded = isPhaseExpanded(phase);
+      const hasSubtasks = Array.isArray(phase.subtasks) && phase.subtasks.length > 0;
+      const caret = hasSubtasks ? (isExpanded ? '▾' : '▸') : '·';
+
+      html += '<div class="phase">';
+      html += '<div class="phase-row" data-phase-toggle="' + esc(phase.id) + '">';
+      html += '<span class="phase-caret">' + caret + '</span>';
+      html += '<span class="phase-glyph ' + statusClass(phase.status) + '">' + statusGlyph(phase.status) + '</span>';
+      html += '<span class="phase-name ' + statusClass(phase.status) + '">' + esc(phase.name) + '</span>';
+      if (phase.badge) {
+        html += '<span class="phase-badge">' + esc(phase.badge) + '</span>';
+      }
+      if (phase.durationMs != null) {
+        html += '<span class="phase-duration">' + formatDuration(phase.durationMs) + '</span>';
+      } else if (phase.status === 'running' && phase.startedAt) {
+        html += '<span class="phase-duration">' + formatElapsed(phase.startedAt) + '</span>';
+      }
+      html += '</div>';
+
+      if (isExpanded && hasSubtasks) {
+        html += '<div class="subtask-list">';
+        for (const sub of phase.subtasks) {
+          html += '<div class="subtask">';
+          html += '<span class="subtask-glyph ' + statusClass(sub.status) + '">' + statusGlyph(sub.status) + '</span>';
+          html += '<span class="subtask-label ' + (sub.status === 'pending' ? 'pending' : '') + '">' + esc(sub.label) + '</span>';
+          if (sub.detail) {
+            html += '<span class="subtask-detail">' + esc(sub.detail) + '</span>';
+          }
+          if (sub.durationMs != null && sub.durationMs > 100) {
+            html += '<span class="subtask-duration">' + formatDuration(sub.durationMs) + '</span>';
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // Phase expansion state lives in the webview only — never pushed back to engine.
+  // Default: running phase auto-expanded; complete and pending phases collapsed.
+  // User clicks override the default and are remembered in phaseExpansionOverrides.
+  function isPhaseExpanded(phase) {
+    if (phase.id in phaseExpansionOverrides) return phaseExpansionOverrides[phase.id];
+    if (phase.status === 'running') return true;
+    if (phase.status === 'failed') return true;
+    return false;
+  }
+
+  function statusGlyph(status) {
+    switch (status) {
+      case 'complete': return '✓';
+      case 'running':  return '⟳';
+      case 'failed':   return '✗';
+      case 'skipped':  return '–';
+      case 'pending':  return '⌛';
+      default:         return '·';
+    }
+  }
+
+  function statusClass(status) {
+    return status || 'pending';
+  }
+
+  function formatDuration(ms) {
+    if (ms < 1000) return String(ms) + 'ms';
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  function computeProgressPercent(phases, status) {
+    if (status === 'complete') return 100;
+    if (!phases || phases.length === 0) return progressWidth(status);
+    let progress = 0;
+    for (const phase of phases) {
+      if (phase.status === 'complete') {
+        progress += 1;
+      } else if (phase.status === 'running') {
+        // Fractional credit based on subtask completion within the running phase
+        const subs = phase.subtasks || [];
+        if (subs.length > 0) {
+          const done = subs.filter(s => s.status === 'complete').length;
+          progress += done / subs.length;
+        } else {
+          progress += 0.3;
+        }
+        break;
+      }
+    }
+    return Math.min(99, Math.round((progress / phases.length) * 100));
   }
 
   function renderCrystals() {
@@ -436,7 +608,9 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
   function addRepo() { post({ type: 'addRepo' }); }
   function runAnalysis() {
     const paths = (state.repos || []).map(function(r) { return r.path; });
-    if (paths.length > 0) post({ type: 'runAnalysis', paths });
+    if (paths.length === 0) return;
+    applyOptimisticRunning();
+    post({ type: 'runAnalysis', paths });
   }
   function syncCrystals() { post({ type: 'syncCrystals' }); }
   function toggleCrystalConfig() { state.crystalConfigOpen = !state.crystalConfigOpen; render(); }
@@ -462,6 +636,21 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
     var el = e.target;
     if (!el) return;
 
+    // Phase expand/collapse — check element and parent (clicking glyph or label still toggles)
+    var phaseToggle = el.dataset && el.dataset.phaseToggle ? el : (el.closest ? el.closest('[data-phase-toggle]') : null);
+    if (phaseToggle && phaseToggle.dataset.phaseToggle) {
+      var pid = phaseToggle.dataset.phaseToggle;
+      var phases = (state.progress && state.progress.phases) || [];
+      var phase = null;
+      for (var i = 0; i < phases.length; i++) { if (phases[i].id === pid) { phase = phases[i]; break; } }
+      var currentlyExpanded = (pid in phaseExpansionOverrides)
+        ? phaseExpansionOverrides[pid]
+        : (phase && (phase.status === 'running' || phase.status === 'failed'));
+      phaseExpansionOverrides[pid] = !currentlyExpanded;
+      render();
+      return;
+    }
+
     // Remove repo (data-remove)
     if (el.dataset && el.dataset.remove !== undefined) {
       post({ type: 'removeRepo', path: el.dataset.remove });
@@ -481,11 +670,13 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
 
     // Scan workspace in one click (data-scan-path) — adds repo + starts scan
     if (el.dataset && el.dataset.scanPath !== undefined) {
+      applyOptimisticRunning();
       post({ type: 'scanWorkspace', path: el.dataset.scanPath, name: el.dataset.scanName || el.dataset.scanPath });
       return;
     }
     var scanParent = el.closest('[data-scan-path]');
     if (scanParent && scanParent.dataset.scanPath) {
+      applyOptimisticRunning();
       post({ type: 'scanWorkspace', path: scanParent.dataset.scanPath, name: scanParent.dataset.scanName || scanParent.dataset.scanPath });
       return;
     }
@@ -535,7 +726,10 @@ function getSidebarHtml(webview: vscode.Webview, nonce: string): string {
   window.addEventListener('message', function(ev) {
     var msg = ev.data;
     if (msg.type === 'stateUpdate') {
+      const wasRunning = state.running;
       state = Object.assign({}, state, msg.state);
+      if (state.running && !wasRunning) startElapsedTimer();
+      if (!state.running && wasRunning) stopElapsedTimer();
       render();
     }
     if (msg.type === 'configFeedback') {
@@ -600,7 +794,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         case 'scanWorkspace':
           await this.state.addRepo(msg.path);
-          await this.pushState();
+          // Push repos + running=true in one message so the intermediate "Start Scan" screen never appears
+          await this.pushState(undefined, true);
           this.callbacks.onRunAnalysis([msg.path]);
           break;
 
@@ -704,7 +899,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  async pushState(engineStatusOverride?: string): Promise<void> {
+  async pushState(engineStatusOverride?: string, running?: boolean): Promise<void> {
     if (!this._view) return;
 
     const client = this.callbacks.getClient();
@@ -722,24 +917,37 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     const workspaceFolders = (vscode.workspace.workspaceFolders ?? [])
       .map(f => ({ name: f.name, path: f.uri.fsPath }));
 
-    await this._view.webview.postMessage({
-      type: 'stateUpdate',
-      state: {
-        repos: this.state.getRepos(),
-        workspaceFolders,
-        engineStatus: engineStatusOverride ?? (
-          this.engineManager.port
-            ? `Engine running on port ${String(this.engineManager.port)}`
-            : 'Engine starting…'
-        ),
-        crystalCount,
-        hasConfig: configInfo !== null && (configInfo.hasApiKey || configInfo.provider === 'ollama'),
-        provider: configInfo?.provider ?? 'anthropic',
-        hasApiKey: configInfo?.hasApiKey ?? false,
-        crystalStoreRepo: crystalConfig.repoUrl,
-        hasCrystalToken: crystalConfig.hasToken,
-      },
-    });
+    const state: Record<string, unknown> = {
+      repos: this.state.getRepos(),
+      workspaceFolders,
+      engineStatus: engineStatusOverride ?? (
+        this.engineManager.port
+          ? `Engine running on port ${String(this.engineManager.port)}`
+          : 'Engine starting…'
+      ),
+      crystalCount,
+      hasConfig: configInfo !== null && (configInfo.hasApiKey || configInfo.provider === 'ollama'),
+      provider: configInfo?.provider ?? 'anthropic',
+      hasApiKey: configInfo?.hasApiKey ?? false,
+      crystalStoreRepo: crystalConfig.repoUrl,
+      hasCrystalToken: crystalConfig.hasToken,
+    };
+
+    if (running !== undefined) {
+      state['running'] = running;
+      if (running) {
+        // Placeholder progress for the brief window between user click and first engine poll.
+        // The engine's createJob() builds the full phase tree; the next poll replaces this.
+        state['progress'] = {
+          status: 'queued',
+          stage: 'Starting…',
+          phases: [],
+          startedAt: new Date().toISOString(),
+        };
+      }
+    }
+
+    await this._view.webview.postMessage({ type: 'stateUpdate', state });
   }
 
   async updateProgress(progress: unknown): Promise<void> {

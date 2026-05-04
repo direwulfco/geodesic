@@ -37,77 +37,120 @@ interface PendingDetection {
 
 const MAX_SCRUB_DEPTH = 50;
 
-function walkAndScrub(
+// Scrub a single string value. Returns the (possibly replaced) string. Pushes any attestation
+// candidates onto `pending`. Strings are immutable in JS, so even the in-place walker has to
+// allocate a new string when replacements happen — but that allocation is bounded by detection
+// hits, not by tree shape.
+function scrubString(
+  value: string,
+  fieldName: string,
+  jsonPath: string,
+  usedRefIds: Set<string>,
+  pending: PendingDetection[],
+): string {
+  if (isStructuralField(fieldName)) return value;
+  const detections = detectInValue(value);
+  if (detections.length === 0) return value;
+
+  const tokens: string[] = [];
+  for (const detection of detections) {
+    const refId = generateRefId(usedRefIds);
+    const token = buildToken(
+      detection.patternDef.category,
+      detection.patternDef.piiType,
+      refId,
+      detection.patternDef.confidence,
+    );
+    tokens.push(token);
+    pending.push({
+      entryId: refId,
+      token,
+      jsonPath,
+      startIndex: detection.startIndex,
+      endIndex: detection.endIndex,
+      patternId: detection.patternId,
+      match: detection.match,
+      category: detection.patternDef.category,
+      piiType: detection.patternDef.piiType,
+      hipaaIdentifier: detection.patternDef.hipaaIdentifier,
+      hipaaSafeHarborItem: detection.patternDef.hipaaSafeHarborItem,
+      confidence: detection.patternDef.confidence,
+      confidencePct: detection.patternDef.confidencePct,
+    });
+  }
+  return applyReplacements(value, detections, tokens);
+}
+
+// In-place tree walker. Mutates arrays and objects directly — only string values are reassigned
+// (since strings are immutable). The original harvest object's structural identity is preserved
+// throughout, so we never carry two parallel copies of the tree at peak.
+//
+// IMPORTANT: the caller must not retain the original harvest reference after this returns;
+// the harvest has been mutated in place to contain attestation tokens.
+function walkAndScrubInPlace(
   obj: unknown,
   fieldName: string,
   jsonPath: string,
   usedRefIds: Set<string>,
   pending: PendingDetection[],
-  depth = 0,
-  seen = new Set<object>(),
+  depth: number,
+  seen: Set<object>,
 ): unknown {
   if (depth > MAX_SCRUB_DEPTH) return obj;
 
   if (typeof obj === 'string') {
-    if (isStructuralField(fieldName)) return obj;
+    return scrubString(obj, fieldName, jsonPath, usedRefIds, pending);
+  }
 
-    const detections = detectInValue(obj);
-    if (detections.length === 0) return obj;
-
-    const tokens: string[] = [];
-    for (const detection of detections) {
-      const refId = generateRefId(usedRefIds);
-      const token = buildToken(
-        detection.patternDef.category,
-        detection.patternDef.piiType,
-        refId,
-        detection.patternDef.confidence,
+  if (Array.isArray(obj)) {
+    if (seen.has(obj)) return obj;
+    seen.add(obj);
+    for (let i = 0; i < obj.length; i++) {
+      obj[i] = walkAndScrubInPlace(
+        obj[i],
+        fieldName,
+        `${jsonPath}[${String(i)}]`,
+        usedRefIds,
+        pending,
+        depth + 1,
+        seen,
       );
-      tokens.push(token);
-      pending.push({
-        entryId: refId,
-        token,
-        jsonPath,
-        startIndex: detection.startIndex,
-        endIndex: detection.endIndex,
-        patternId: detection.patternId,
-        match: detection.match,
-        category: detection.patternDef.category,
-        piiType: detection.patternDef.piiType,
-        hipaaIdentifier: detection.patternDef.hipaaIdentifier,
-        hipaaSafeHarborItem: detection.patternDef.hipaaSafeHarborItem,
-        confidence: detection.patternDef.confidence,
-        confidencePct: detection.patternDef.confidencePct,
-      });
-    }
-
-    return applyReplacements(obj, detections, tokens);
-
-  } else if (Array.isArray(obj)) {
-    if (seen.has(obj)) return obj;
-    seen.add(obj);
-    const result = obj.map((item, i) =>
-      walkAndScrub(item, fieldName, `${jsonPath}[${String(i)}]`, usedRefIds, pending, depth + 1, seen),
-    );
-    seen.delete(obj);
-    return result;
-  } else if (typeof obj === 'object' && obj !== null) {
-    if (seen.has(obj)) return obj;
-    seen.add(obj);
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-      result[key] = walkAndScrub(value, key, `${jsonPath}.${key}`, usedRefIds, pending, depth + 1, seen);
     }
     seen.delete(obj);
-    return result;
+    return obj;
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    if (seen.has(obj)) return obj;
+    seen.add(obj);
+    const rec = obj as Record<string, unknown>;
+    // Snapshot keys before iterating — Object.keys returns a fresh array so concurrent
+    // mutation of values is safe, but defensive in case future code adds key churn.
+    const keys = Object.keys(rec);
+    for (const key of keys) {
+      rec[key] = walkAndScrubInPlace(
+        rec[key],
+        key,
+        `${jsonPath}.${key}`,
+        usedRefIds,
+        pending,
+        depth + 1,
+        seen,
+      );
+    }
+    seen.delete(obj);
+    return obj;
   }
 
   return obj;
 }
 
 /**
- * Main intercept entry point. Takes a raw HarvestResult and returns a
- * fully scrubbed payload with attestation chain and purity verification.
+ * Main intercept entry point. Mutates the harvest object in place: every flagged string is
+ * replaced with its attestation token, and the same object is returned via `scrubbedHarvest`.
+ *
+ * The caller must NOT retain a reference to the original harvest after this call — there is
+ * no separate "before" copy. This is the central memory-saving change for medplum-scale repos.
  *
  * Throws PurityCheckError if any PII survives scrubbing.
  */
@@ -118,12 +161,13 @@ export function intercept(
   const usedRefIds = new Set<string>();
   const pending: PendingDetection[] = [];
 
-  // Walk the full HarvestResult tree and scrub all string values
-  const scrubbed = walkAndScrub(harvest, 'root', 'harvest', usedRefIds, pending);
+  // In-place walk. After this line, `harvest` itself contains attestation tokens
+  // wherever the detector fired. No second copy is allocated for the tree itself.
+  walkAndScrubInPlace(harvest, 'root', 'harvest', usedRefIds, pending, 0, new Set<object>());
 
-  // Serialize the scrubbed payload
-  const scrubbedPayload = JSON.stringify(scrubbed);
-  const payloadHash = computeHash(scrubbedPayload);
+  // Hash the canonicalized JSON serialization. This string lives only inside this function;
+  // it is freed when intercept() returns. Attestation entries reference the hash, not the string.
+  const payloadHash = computeHash(JSON.stringify(harvest));
 
   // Build attestation chain
   const chain = new AttestationChain();
@@ -171,9 +215,9 @@ export function intercept(
     }
   }
 
-  // Mandatory purity check — verify the parsed object, not the JSON string,
-  // so JSON escape sequences (\n before @decorator, etc.) never cause false positives.
-  const purity = verifyPurity(scrubbed);
+  // Mandatory purity check — walks the (already scrubbed) object directly, so no JSON
+  // string is built for this step. Catches anything the detector missed before AI sees it.
+  const purity = verifyPurity(harvest);
   if (!purity.clean) {
     throw new PurityCheckError(
       purity.firstMatchPattern ?? 'unknown',
@@ -189,7 +233,8 @@ export function intercept(
   const piiCount = attestationEntries.filter(e => e.piiCategory === 'PII').length;
 
   return {
-    scrubbedPayload,
+    scrubbedHarvest: harvest,
+    payloadHash,
     attestationEntries,
     uncertainDetections,
     piiCount,

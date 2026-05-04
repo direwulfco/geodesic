@@ -45,24 +45,21 @@ function buildArchTab(markdown: string): string {
     .replace(/(<li>.*<\/li>\n?)+/g, s => '<ul>' + s + '</ul>')
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br>');
-  return `<div class="tab-content arch-tab"><div class="markdown-body"><p>${html}</p></div></div>`;
+  return `<div class="pane-body arch-tab"><div class="markdown-body"><p>${html}</p></div></div>`;
 }
 
 function buildSkillTab(synthesis: FullJob['result']['synthesis']): string {
   const sf = synthesis.skillFile;
   const jsonStr = escHtml(JSON.stringify(sf, null, 2));
-  return `<div class="tab-content skill-tab">
+  return `<div class="pane-body skill-tab">
     <div class="skill-header">
       <span>${escHtml(sf.meta.repo)}</span>
       <span class="muted">${escHtml(sf.meta.analyzedAt.slice(0, 10))}</span>
       <span class="muted">${String(Math.round(sf.meta.analysisDurationMs / 1000))}s</span>
     </div>
-    <div class="toggle-row">
-      <button class="btn-tab active" id="json-btn" onclick="showJson()">JSON</button>
-    </div>
     <pre class="code-block" id="skill-json">${jsonStr}</pre>
     ${sf.phiZones.length > 0 ? `<div class="phi-zones"><h3>PHI Zones (${String(sf.phiZones.length)})</h3>${sf.phiZones.map(z =>
-      `<div class="phi-zone" onclick="openFile('${escHtml(z.file)}',${String(z.lineStart)})">
+      `<div class="phi-zone" data-open-file="${escHtml(z.file)}" data-open-line="${String(z.lineStart)}">
         <span class="phi-file">${escHtml(z.file)}</span>
         <span class="phi-lines">lines ${String(z.lineStart)}–${String(z.lineEnd)}</span>
         <span class="phi-count">${String(z.phiFieldCount)} PHI fields</span>
@@ -78,18 +75,18 @@ function buildGapTab(synthesis: FullJob['result']['synthesis']): string {
 
   const scoreBar = (score: number) => `<div class="score-bar"><div class="score-fill" style="width:${String(score)}%;background:${gradeColor(score >= 90 ? 'A' : score >= 75 ? 'B' : score >= 60 ? 'C' : score >= 40 ? 'D' : 'F')}"></div></div>`;
 
-  let html = `<div class="tab-content gap-tab">
+  let html = `<div class="pane-body gap-tab">
     <div class="overall-score">
       <span class="score-num" style="color:${gradeColor(gr.overallGrade)}">${String(gr.overallScore)}</span>
       <span class="score-grade" style="color:${gradeColor(gr.overallGrade)}">${escHtml(gr.overallGrade)}</span>
       <span class="muted">${escHtml(gr.repoName)}</span>
     </div>
     <div class="filter-row">
-      Filter: <button class="btn-tab active" onclick="filterFindings('all')">All</button>
-      <button class="btn-tab" onclick="filterFindings('P0')">P0</button>
-      <button class="btn-tab" onclick="filterFindings('P1')">P1</button>
-      <button class="btn-tab" onclick="filterFindings('P2')">P2</button>
-      <button class="btn-tab" onclick="filterFindings('P3')">P3</button>
+      Filter: <button class="btn-tab active" data-filter="all">All</button>
+      <button class="btn-tab" data-filter="P0">P0</button>
+      <button class="btn-tab" data-filter="P1">P1</button>
+      <button class="btn-tab" data-filter="P2">P2</button>
+      <button class="btn-tab" data-filter="P3">P3</button>
     </div>`;
 
   for (const dim of dims) {
@@ -102,7 +99,7 @@ function buildGapTab(synthesis: FullJob['result']['synthesis']): string {
       ${scoreBar(dim.score)}`;
 
     for (const f of dim.findings) {
-      html += `<div class="finding" data-severity="${escHtml(f.severity)}" onclick="openFile('${escHtml(f.file)}',${String(f.lineStart)})">
+      html += `<div class="finding" data-severity="${escHtml(f.severity)}" data-open-file="${escHtml(f.file)}" data-open-line="${String(f.lineStart)}">
         <div class="finding-header">
           <span class="sev-badge" style="background:${severityClass(f.severity)}">${escHtml(f.severity)}</span>
           <span class="finding-desc">${escHtml(f.description)}</span>
@@ -118,7 +115,7 @@ function buildGapTab(synthesis: FullJob['result']['synthesis']): string {
   if (gr.uncertainDetections.length > 0) {
     html += '<div class="dim-section"><div class="dim-header"><strong>⚠ Uncertain PII Detections</strong></div>';
     for (const ud of gr.uncertainDetections) {
-      html += `<div class="finding uncertain" onclick="openFile('${escHtml(ud.file)}',${String(ud.lineStart)})">
+      html += `<div class="finding uncertain" data-open-file="${escHtml(ud.file)}" data-open-line="${String(ud.lineStart)}">
         <div class="finding-loc">${escHtml(ud.file)} lines ${String(ud.lineStart)}–${String(ud.lineEnd)}</div>
         <div class="finding-detail muted">${escHtml(ud.trigger)} (${String(ud.confidencePct)}% confidence)</div>
         <div class="finding-fix">Action: ${escHtml(ud.recommendedAction)}</div>
@@ -131,12 +128,21 @@ function buildGapTab(synthesis: FullJob['result']['synthesis']): string {
   return html;
 }
 
+function formatDurationFromMs(ms: number): string {
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  if (m === 0) return `${String(s)}s`;
+  return `${String(m)}m ${String(s).padStart(2, '0')}s`;
+}
+
 function getResultsHtml(nonce: string, job: FullJob): string {
   const r = job.result;
   const archHtml = buildArchTab(r.synthesis.architectureMapMarkdown);
   const skillHtml = buildSkillTab(r.synthesis);
   const gapHtml = buildGapTab(r.synthesis);
   const gr = r.synthesis.gapReport;
+  const elapsed = formatDurationFromMs(r.synthesis.skillFile.meta.analysisDurationMs);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -148,6 +154,12 @@ function getResultsHtml(nonce: string, job: FullJob): string {
 <style nonce="${nonce}">
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--vscode-font-family); font-size: 13px; color: var(--vscode-foreground); background: var(--vscode-editor-background); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .completion-banner { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--vscode-textBlockQuote-background); border-bottom: 1px solid var(--vscode-editorGroup-border); flex-shrink: 0; }
+  .completion-check { color: var(--vscode-charts-green, #4caf50); font-size: 16px; font-weight: 700; flex-shrink: 0; }
+  .completion-title { font-size: 13px; font-weight: 600; }
+  .completion-sep { color: var(--vscode-descriptionForeground); }
+  .completion-time { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .completion-grade { font-weight: 700; padding: 1px 7px; border-radius: 3px; font-size: 12px; }
   .tabs { display: flex; background: var(--vscode-editorGroupHeader-tabsBackground); border-bottom: 1px solid var(--vscode-editorGroup-border); flex-shrink: 0; }
   .tab { padding: 8px 16px; cursor: pointer; font-size: 12px; border-right: 1px solid var(--vscode-editorGroup-border); user-select: none; }
   .tab.active { background: var(--vscode-editor-background); border-bottom: 2px solid var(--vscode-focusBorder); }
@@ -199,56 +211,87 @@ function getResultsHtml(nonce: string, job: FullJob): string {
 </style>
 </head>
 <body>
-<div class="tabs">
-  <div class="tab active" id="tab-arch" onclick="switchTab('arch')">Architecture</div>
-  <div class="tab" id="tab-skill" onclick="switchTab('skill')">Skill File</div>
-  <div class="tab" id="tab-gap" onclick="switchTab('gap')">Gap Report (${escHtml(gr.overallGrade)} ${String(gr.overallScore)})</div>
+<div class="completion-banner">
+  <span class="completion-check">✓</span>
+  <span class="completion-title">Analysis complete</span>
+  <span class="completion-sep">·</span>
+  <span>${escHtml(gr.repoName)}</span>
+  <span class="completion-sep">·</span>
+  <span class="completion-time">${escHtml(elapsed)}</span>
+  <span class="completion-sep">·</span>
+  <span class="completion-grade" style="color:${gradeColor(gr.overallGrade)};background:rgba(128,128,128,0.12)">${escHtml(gr.overallGrade)} ${String(gr.overallScore)}/100</span>
 </div>
-<div id="pane-arch" class="tab-content visible">${archHtml}</div>
+<div class="tabs">
+  <div class="tab active" id="tab-arch"  data-tab="arch">Architecture</div>
+  <div class="tab"        id="tab-skill" data-tab="skill">Skill File</div>
+  <div class="tab"        id="tab-gap"   data-tab="gap">Gap Report (${escHtml(gr.overallGrade)} ${String(gr.overallScore)})</div>
+</div>
+<div id="pane-arch"  class="tab-content visible">${archHtml}</div>
 <div id="pane-skill" class="tab-content">${skillHtml}</div>
-<div id="pane-gap" class="tab-content">${gapHtml}</div>
+<div id="pane-gap"   class="tab-content">${gapHtml}</div>
 <div class="artifacts">
-  Artifacts: <a href="#" onclick="openArtifact('arch')">architecture-map.md</a> · <a href="#" onclick="openArtifact('json')">skill-file.geodesic.json</a> · <a href="#" onclick="openArtifact('md')">skill-file.geodesic.md</a> · <a href="#" onclick="openArtifact('gap')">gap-report.md</a>
+  Artifacts:
+  <a href="#" data-artifact="arch">architecture-map.md</a> ·
+  <a href="#" data-artifact="json">skill-file.geodesic.json</a> ·
+  <a href="#" data-artifact="md">skill-file.geodesic.md</a> ·
+  <a href="#" data-artifact="gap">gap-report.md</a>
 </div>
 <script nonce="${nonce}">
 (function() {
   const vscode = acquireVsCodeApi();
   const artifactPaths = ${JSON.stringify(r.artifactPaths)};
-  let currentFilter = 'all';
 
   function switchTab(name) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('visible'));
-    document.getElementById('tab-' + name).classList.add('active');
-    document.getElementById('pane-' + name).classList.add('visible');
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('visible'); });
+    var tab = document.getElementById('tab-' + name);
+    var pane = document.getElementById('pane-' + name);
+    if (tab) tab.classList.add('active');
+    if (pane) pane.classList.add('visible');
   }
 
-  function filterFindings(sev) {
-    currentFilter = sev;
-    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    document.querySelectorAll('.finding').forEach(f => {
-      const fSev = f.dataset.severity;
+  function filterFindings(sev, btnEl) {
+    document.querySelectorAll('.filter-row .btn-tab').forEach(function(b){ b.classList.remove('active'); });
+    if (btnEl) btnEl.classList.add('active');
+    document.querySelectorAll('.finding').forEach(function(f){
+      var fSev = f.dataset.severity;
       f.style.display = (sev === 'all' || fSev === sev) ? '' : 'none';
     });
   }
 
   function openFile(file, line) {
-    vscode.postMessage({ type: 'openFile', file, line });
+    if (!file) return;
+    vscode.postMessage({ type: 'openFile', file: file, line: line ? Number(line) : 1 });
   }
 
   function openArtifact(type) {
-    const paths = { arch: artifactPaths.architectureMap, json: artifactPaths.skillFileJson, md: artifactPaths.skillFileMd, gap: artifactPaths.gapReport };
-    vscode.postMessage({ type: 'openFile', file: paths[type], line: 1 });
+    var paths = {
+      arch: artifactPaths.architectureMap,
+      json: artifactPaths.skillFileJson,
+      md:   artifactPaths.skillFileMd,
+      gap:  artifactPaths.gapReport,
+    };
+    var p = paths[type];
+    if (p) vscode.postMessage({ type: 'openFile', file: p, line: 1 });
   }
 
-  function showJson() { /* already shown */ }
+  // Single delegated click handler — CSP forbids inline onclick attributes.
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    if (!el || !el.closest) return;
 
-  window.switchTab = switchTab;
-  window.filterFindings = filterFindings;
-  window.openFile = openFile;
-  window.openArtifact = openArtifact;
-  window.showJson = showJson;
+    var tabEl = el.closest('[data-tab]');
+    if (tabEl) { switchTab(tabEl.dataset.tab); return; }
+
+    var filterEl = el.closest('[data-filter]');
+    if (filterEl) { filterFindings(filterEl.dataset.filter, filterEl); return; }
+
+    var artifactEl = el.closest('[data-artifact]');
+    if (artifactEl) { e.preventDefault(); openArtifact(artifactEl.dataset.artifact); return; }
+
+    var openFileEl = el.closest('[data-open-file]');
+    if (openFileEl) { openFile(openFileEl.dataset.openFile, openFileEl.dataset.openLine); return; }
+  });
 })();
 </script>
 </body>

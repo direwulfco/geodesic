@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { EngineManager } from './engine-manager.js';
+import { EngineManager, ENGINE_STDERR_LOG_PATH } from './engine-manager.js';
 import { EngineClient } from './engine-client.js';
 import { ExtensionState } from './state.js';
 import { SidebarProvider } from './sidebar-provider.js';
@@ -199,15 +199,23 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  // Keep engineClient in sync with the engine port on every status change (handles restarts)
+  context.subscriptions.push(
+    engineManager.onStatusChange(() => {
+      const port = engineManager.port;
+      if (port) {
+        engineClient = new EngineClient(port);
+      } else {
+        engineClient = null;
+      }
+      void sidebarProvider.pushState();
+    }),
+  );
+
   // Start engine on activation
   const autoStart = vscode.workspace.getConfiguration('geodesic').get<boolean>('autoStartEngine', true);
   if (autoStart) {
-    void engineManager.start(context).then(() => {
-      if (engineManager.port) {
-        engineClient = new EngineClient(engineManager.port);
-        void sidebarProvider.pushState();
-      }
-    }).catch((err: unknown) => {
+    void engineManager.start(context).catch((err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       void vscode.window.showErrorMessage(`Geodesic engine failed to start: ${msg}`);
     });
@@ -216,6 +224,7 @@ export function activate(context: vscode.ExtensionContext): void {
   function runAnalysis(repoPaths: string[]): void {
     const client = getClient();
     if (!client) {
+      void sidebarProvider.clearProgress();
       void vscode.window.showErrorMessage('Geodesic engine is not running. Please wait for it to start.');
       return;
     }
@@ -226,6 +235,14 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   async function runSingleAnalysis(client: EngineClient, repoPath: string): Promise<void> {
+    engineManager.setAnalysisInProgress(true);
+    // Capture an engine crash that happens while we're polling — without this we get
+    // an opaque ECONNRESET. The crash event fires before the HTTP poll fails.
+    let engineCrashReason: string | null = null;
+    const crashSub = engineManager.onCrash(({ exitCode, tail }) => {
+      const firstLine = tail.split('\n').map(s => s.trim()).filter(Boolean).pop() ?? '';
+      engineCrashReason = firstLine || `engine exited with code ${String(exitCode)}`;
+    });
     try {
       const { jobId } = await client.startAnalysis(repoPath);
 
@@ -242,8 +259,16 @@ export function activate(context: vscode.ExtensionContext): void {
       // pollJob resolves only on 'complete', so result is guaranteed here
       resultsPanel.open(job, context);
       const gr = job.result.synthesis.gapReport;
+
+      const totalSeconds = Math.round(job.result.synthesis.skillFile.meta.analysisDurationMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const elapsed = minutes > 0
+        ? `${String(minutes)}m ${String(seconds).padStart(2, '0')}s`
+        : `${String(seconds)}s`;
+
       void vscode.window.showInformationMessage(
-        `Geodesic analysis complete — ${gr.repoName}: ${String(gr.overallScore)}/100 (${gr.overallGrade})`,
+        `Geodesic analyzed ${gr.repoName} in ${elapsed} — ${String(gr.overallScore)}/100 (${gr.overallGrade})`,
         'View Results',
       ).then(choice => {
         if (choice === 'View Results') {
@@ -252,8 +277,35 @@ export function activate(context: vscode.ExtensionContext): void {
       });
     } catch (err) {
       await sidebarProvider.clearProgress();
-      const msg = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`Analysis failed: ${msg}`);
+      const rawMsg = err instanceof Error ? err.message : String(err);
+
+      if (engineCrashReason !== null) {
+        // Engine crashed mid-analysis — the engine-manager already showed a "crash" toast with
+        // a "Open Crash Log" button. Show a concise analysis-failed toast that matches.
+        void vscode.window.showErrorMessage(
+          `Analysis aborted — engine crashed: ${engineCrashReason}`,
+          'Open Crash Log',
+        ).then(choice => {
+          if (choice === 'Open Crash Log') {
+            void vscode.window.showTextDocument(vscode.Uri.file(ENGINE_STDERR_LOG_PATH));
+          }
+        });
+      } else if (/ECONNRESET|ECONNREFUSED|socket hang up/i.test(rawMsg)) {
+        // Connection died but we didn't see a crash event — engine may be wedged.
+        void vscode.window.showErrorMessage(
+          `Analysis failed: lost connection to engine. See ${ENGINE_STDERR_LOG_PATH} for details.`,
+          'Open Crash Log',
+        ).then(choice => {
+          if (choice === 'Open Crash Log') {
+            void vscode.window.showTextDocument(vscode.Uri.file(ENGINE_STDERR_LOG_PATH));
+          }
+        });
+      } else {
+        void vscode.window.showErrorMessage(`Analysis failed: ${rawMsg}`);
+      }
+    } finally {
+      engineManager.setAnalysisInProgress(false);
+      crashSub.dispose();
     }
   }
 

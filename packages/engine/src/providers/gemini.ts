@@ -142,20 +142,47 @@ export function createEchoProvider(config: GeodesicConfig): AIProvider {
 
 function mapError(provider: string, err: unknown): ProviderError {
   const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+
+  // Gemini billing: free-tier quota exhaustion vs paid quota — both surface as RESOURCE_EXHAUSTED.
+  // Only treat as INSUFFICIENT_CREDITS when "billing" or "free tier" is in the message.
+  if (
+    lower.includes('billing') ||
+    lower.includes('free tier') ||
+    lower.includes('free_tier') ||
+    lower.includes('please enable billing')
+  ) {
+    return new ProviderError(
+      provider,
+      'INSUFFICIENT_CREDITS',
+      'Gemini: billing quota exhausted. Enable billing at https://console.cloud.google.com/billing then retry.',
+      false,
+    );
+  }
   if (msg.includes('API_KEY') || msg.includes('401') || msg.includes('PERMISSION_DENIED')) {
-    return new ProviderError(provider, 'AUTH_FAILED', msg, false);
+    return new ProviderError(
+      provider,
+      'AUTH_FAILED',
+      'Gemini: API key rejected. Get a new key at https://aistudio.google.com/app/apikey and re-run "Configure AI Provider".',
+      false,
+    );
   }
   if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429')) {
-    return new ProviderError(provider, 'RATE_LIMITED', msg, true);
+    return new ProviderError(
+      provider,
+      'RATE_LIMITED',
+      'Gemini: rate limited — too many requests. The engine will retry automatically.',
+      true,
+    );
   }
   if (msg.includes('NOT_FOUND') || msg.includes('404')) {
-    return new ProviderError(provider, 'MODEL_NOT_FOUND', msg, false);
+    return new ProviderError(provider, 'MODEL_NOT_FOUND', `Gemini: model not found — ${msg}`, false);
   }
-  if (msg.includes('context length') || msg.includes('INVALID_ARGUMENT')) {
-    return new ProviderError(provider, 'CONTEXT_EXCEEDED', msg, false);
+  if (lower.includes('context length') || msg.includes('INVALID_ARGUMENT')) {
+    return new ProviderError(provider, 'CONTEXT_EXCEEDED', 'Gemini: context window exceeded for this repo. Try a smaller subset.', false);
   }
-  if (msg.includes('ECONNREFUSED') || msg.includes('fetch')) {
-    return new ProviderError(provider, 'NETWORK_ERROR', msg, true);
+  if (msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') || msg.includes('fetch')) {
+    return new ProviderError(provider, 'NETWORK_ERROR', `Gemini: network error — ${msg}. Check your internet connection.`, true);
   }
   return new ProviderError(provider, 'UNKNOWN', msg, false);
 }

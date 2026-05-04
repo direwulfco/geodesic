@@ -5,6 +5,41 @@ export function estimatePromptTokens(text: string): number {
   return Math.ceil(text.length / 3);
 }
 
+// Maximum source files to render with full extraction (exports/imports/classes/etc.) inside
+// a deep-dive subsystem prompt. Files past this budget appear as a path-only inventory so
+// the AI still sees the full surface area without blowing the prompt token budget.
+//
+// At medplum scale (~5K files) a single subsystem like packages/server can have 1500+ source
+// files. Without this cap, deep-dive prompts hit hundreds of KB → context-window failures
+// and runaway token cost. Schemas, env files, configs, scripts, hub files, and entry points
+// are ALWAYS included regardless of the cap because they are architecturally critical.
+const SUBSYSTEM_SOURCE_DETAIL_CAP = 200;
+
+// Rank source FileRecords by architectural importance for prompt inclusion. Inbound import
+// count first (most-imported = most architecturally significant), outbound count as tiebreaker
+// (highly-connected leaves still matter), then path lexicographic for full determinism.
+function rankSourceRecords(
+  records: FileRecord[],
+  edges: HarvestResult['importGraph']['edges'],
+): FileRecord[] {
+  const inbound = new Map<string, number>();
+  const outbound = new Map<string, number>();
+  for (const e of edges) {
+    if (e.isExternal) continue;
+    inbound.set(e.to, (inbound.get(e.to) ?? 0) + 1);
+    outbound.set(e.from, (outbound.get(e.from) ?? 0) + 1);
+  }
+  return [...records].sort((a, b) => {
+    const ai = inbound.get(a.path) ?? 0;
+    const bi = inbound.get(b.path) ?? 0;
+    if (ai !== bi) return bi - ai;
+    const ao = outbound.get(a.path) ?? 0;
+    const bo = outbound.get(b.path) ?? 0;
+    if (ao !== bo) return bo - ao;
+    return a.path.localeCompare(b.path);
+  });
+}
+
 // ─── File Catalog Formatters ──────────────────────────────────────────────────
 
 function formatFileRecord(record: FileRecord): string {
@@ -55,17 +90,50 @@ function formatSubsystemFiles(
 
   if (relevant.length === 0) return '(no files in subsystem)';
 
-  // Prioritize: schema > config > source — makes AI see structure first
+  // Schemas, env, configs, scripts: always included with full extraction detail. These are
+  // architecturally critical (data models, secrets layout, build entry points) AND small in
+  // count, so they don't threaten prompt budget.
   const schemas  = relevant.filter(r => r.extraction.type === 'schema' || r.extraction.type === 'env');
   const configs  = relevant.filter(r => r.extraction.type === 'config' || r.extraction.type === 'script');
   const sources  = relevant.filter(r => r.extraction.type === 'source');
   const others   = relevant.filter(r => !['schema', 'env', 'config', 'script', 'source'].includes(r.extraction.type));
 
+  // Source files: bounded by import-fanout ranking. Hub files and entry points always
+  // included before the cap kicks in.
+  const hubSet   = new Set(harvest.importGraph.hubFiles);
+  const entrySet = new Set(harvest.importGraph.entryPoints);
+  const mustInclude = sources.filter(s => hubSet.has(s.path) || entrySet.has(s.path));
+  const remainder   = sources.filter(s => !hubSet.has(s.path) && !entrySet.has(s.path));
+  const ranked      = rankSourceRecords(remainder, harvest.importGraph.edges);
+
+  const detailBudget = Math.max(0, SUBSYSTEM_SOURCE_DETAIL_CAP - mustInclude.length);
+  const detailRanked = ranked.slice(0, detailBudget);
+  const overflow     = ranked.slice(detailBudget);
+
+  // Stable order for the detailed block: must-include first, then ranked-and-budgeted.
+  const detailSources = [...mustInclude, ...detailRanked];
+
   const sections: string[] = [];
-  if (schemas.length  > 0) sections.push(`#### Schema / Env\n${schemas.map(formatFileRecord).join('\n')}`);
-  if (configs.length  > 0) sections.push(`#### Config / Scripts\n${configs.map(formatFileRecord).join('\n')}`);
-  if (sources.length  > 0) sections.push(`#### Source Files (${String(sources.length)})\n${sources.map(formatFileRecord).join('\n')}`);
-  if (others.length   > 0) sections.push(`#### Other (${String(others.length)})\n${others.map(r => `${r.path} [${r.extraction.type}]`).join('\n')}`);
+  if (schemas.length > 0) sections.push(`#### Schema / Env\n${schemas.map(formatFileRecord).join('\n')}`);
+  if (configs.length > 0) sections.push(`#### Config / Scripts\n${configs.map(formatFileRecord).join('\n')}`);
+
+  if (detailSources.length > 0) {
+    const note = overflow.length > 0
+      ? ` — top ${String(detailSources.length)} of ${String(sources.length)} by import-fanout (hubs + entry points pinned)`
+      : '';
+    sections.push(`#### Source Files (${String(detailSources.length)})${note}\n${detailSources.map(formatFileRecord).join('\n')}`);
+  }
+
+  // Overflow inventory: every remaining source file appears as a path so the AI sees the full
+  // surface area of the subsystem and can reference any file accurately. No symbol detail.
+  if (overflow.length > 0) {
+    sections.push(
+      `#### Additional Source Files in Subsystem (${String(overflow.length)} — paths only)\n` +
+      overflow.map(r => `  ${r.path} [${r.language ?? 'source'}]`).join('\n'),
+    );
+  }
+
+  if (others.length > 0) sections.push(`#### Other (${String(others.length)})\n${others.map(r => `${r.path} [${r.extraction.type}]`).join('\n')}`);
 
   return sections.join('\n\n');
 }
