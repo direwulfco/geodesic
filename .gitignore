@@ -59,5 +59,10 @@ specs/
 .claude/
 **/BUILD.md
 
+# Marketing — internal strategy, voice guide, launch drafts, outreach lists
+# Never publish. Holds competitive positioning and pre-launch copy.
+marketing/
+**/marketing/
+
 # Branding / WIP folder restructure scratch space — not for publish
 /Geodesic/
