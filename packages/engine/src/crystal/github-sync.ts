@@ -57,7 +57,14 @@ function authedUrl(repoUrl: string, token: string): string {
 
 async function git(cwd: string, args: string[]): Promise<{ success: boolean; stderr: string; stdout: string }> {
   try {
-    const { stdout, stderr } = await execFileAsync('git', args, { cwd, encoding: 'utf8' });
+    const { stdout, stderr } = await execFileAsync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      // This runs inside the background engine daemon, so git must never block on an
+      // interactive credential prompt. Without these, an unreachable or auth-required
+      // remote hangs the process indefinitely instead of failing fast with an error.
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' },
+    });
     return { success: true, stderr: stderr.trim(), stdout: stdout.trim() };
   } catch (err: unknown) {
     const e = err as { stderr?: string; stdout?: string };
