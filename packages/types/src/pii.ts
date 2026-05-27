@@ -1,3 +1,5 @@
+import type { HarvestResult } from './harvest.js';
+
 export type PiiCategory = 'PHI' | 'PII' | 'SECRET';
 
 export type PiiType =
@@ -83,13 +85,13 @@ export interface UncertainDetection {
   reviewedBy: string | null;
 }
 
-// HarvestResult is forward-declared in harvest.ts. We intentionally do not import it here
-// to avoid a circular dependency between the pii and harvest type modules.
+// HarvestResult lives in harvest.ts. The type-only import at the top of this file is erased
+// at compile time, so it creates no runtime dependency between the pii and harvest modules.
 export interface InterceptResult {
   // Scrubbed harvest object (mutated in place from the input harvest). Strings flagged by the
   // detector have been replaced with attestation tokens. The caller should not retain a
   // reference to the original harvest after intercept() returns — they share structural identity.
-  scrubbedHarvest: import('./harvest.js').HarvestResult;
+  scrubbedHarvest: HarvestResult;
   // SHA-256 hash of the JSON-serialized scrubbed harvest, anchoring every attestation entry.
   payloadHash: string;
   attestationEntries: AttestationEntry[];

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { Phase, PhaseId, PhaseStatus, Subtask, SynthesisResult, UncertainDetection } from '@geodesic/types';
+import type { Phase, PhaseId, Subtask, SynthesisResult, UncertainDetection } from '@geodesic/types';
 import type { ArtifactPaths } from '../artifacts/index.js';
 
 // JobStatus is the legacy single-value status field. Retained alongside `phases` so
@@ -78,7 +78,7 @@ function makeInitialPhases(): Phase[] {
   return PHASE_ORDER.map(({ id, name }) => ({
     id,
     name,
-    status: 'pending' as PhaseStatus,
+    status: 'pending',
     startedAt: null,
     completedAt: null,
     durationMs: null,

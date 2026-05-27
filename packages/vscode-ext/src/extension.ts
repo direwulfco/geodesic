@@ -238,10 +238,12 @@ export function activate(context: vscode.ExtensionContext): void {
     engineManager.setAnalysisInProgress(true);
     // Capture an engine crash that happens while we're polling — without this we get
     // an opaque ECONNRESET. The crash event fires before the HTTP poll fails.
-    let engineCrashReason: string | null = null;
+    // Held in an object so the assignment inside the onCrash callback stays visible to the type
+    // checker in the catch block below — a bare `let` gets narrowed back to `null` there.
+    const crash: { reason: string | null } = { reason: null };
     const crashSub = engineManager.onCrash(({ exitCode, tail }) => {
       const firstLine = tail.split('\n').map(s => s.trim()).filter(Boolean).pop() ?? '';
-      engineCrashReason = firstLine || `engine exited with code ${String(exitCode)}`;
+      crash.reason = firstLine || `engine exited with code ${String(exitCode)}`;
     });
     try {
       const { jobId } = await client.startAnalysis(repoPath);
@@ -279,11 +281,11 @@ export function activate(context: vscode.ExtensionContext): void {
       await sidebarProvider.clearProgress();
       const rawMsg = err instanceof Error ? err.message : String(err);
 
-      if (engineCrashReason !== null) {
+      if (crash.reason !== null) {
         // Engine crashed mid-analysis — the engine-manager already showed a "crash" toast with
         // a "Open Crash Log" button. Show a concise analysis-failed toast that matches.
         void vscode.window.showErrorMessage(
-          `Analysis aborted — engine crashed: ${engineCrashReason}`,
+          `Analysis aborted — engine crashed: ${crash.reason}`,
           'Open Crash Log',
         ).then(choice => {
           if (choice === 'Open Crash Log') {

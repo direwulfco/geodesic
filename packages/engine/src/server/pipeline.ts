@@ -30,7 +30,6 @@ import {
   addPendingSubtask,
   startSubtask,
   completeSubtask,
-  failSubtask,
   type AnalysisJob,
   type JobResult,
 } from './jobs.js';
@@ -276,12 +275,12 @@ async function runPipeline(jobId: string, opts: PipelineOptions): Promise<void> 
       failPhase(jobId, 'crystal-extraction', 'purity failed');
     }
 
-    // Validate all required synthesis fields are present before marking complete.
-    // A partial result is useless — fail loudly so the user knows to retry.
+    // The architecture map is the only synthesis field that can come back empty — gapReport and
+    // skillFile are guaranteed non-null by parseSynthesisResponse (assertGapReport throws on a bad
+    // gap report, and the skill file is always assembled). A partial result is useless, so if the
+    // map is missing we fail loudly and tell the user to retry.
     const missing: string[] = [];
     if (!synthesis.architectureMapMarkdown) missing.push('architecture map');
-    if (!synthesis.gapReport) missing.push('gap report');
-    if (!synthesis.skillFile) missing.push('skill file');
     if (missing.length > 0) {
       const msg = `Synthesis incomplete — AI failed to produce: ${missing.join(', ')}. Check your API quota and retry.`;
       writeErrorLog(outputDir, 'synthesis-incomplete', new Error(msg));
