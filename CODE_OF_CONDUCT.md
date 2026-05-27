@@ -13,7 +13,7 @@ This Code of Conduct applies in all project spaces — issues, pull requests, di
 
 ## Reporting
 
-To report a concern, contact the project maintainers at **info@hyperpace.ai**.
+To report a concern, contact the project maintainers at **info@direwulf.com**.
 
 All reports are reviewed promptly, kept confidential, and handled with the goal of making the community better — not punishing the reporter.
 

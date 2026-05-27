@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>dev.geodesic.plugin</id>
   <name>Geodesic</name>
-  <vendor email="info@hyperpace.ai" url="https://github.com/hyperpaced/geodesic">Geodesic</vendor>
+  <vendor email="info@direwulf.com" url="https://github.com/direwulfco/geodesic">Geodesic</vendor>
   <description><![CDATA[
     <b>Geodesic — Auto-Topology Agent</b><br><br>
     AI-powered codebase topology analysis. Deep static analysis of your repositories

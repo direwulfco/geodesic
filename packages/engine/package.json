@@ -4,15 +4,15 @@
   "private": true,
   "description": "Geodesic Engine — core analysis daemon. All analysis logic lives here.",
   "license": "MIT",
-  "homepage": "https://github.com/hyperpaced/geodesic#readme",
+  "homepage": "https://github.com/direwulfco/geodesic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geodesic"
+    "url": "https://github.com/direwulfco/geodesic"
   },
   "bugs": {
-    "url": "https://github.com/hyperpaced/geodesic/issues"
+    "url": "https://github.com/direwulfco/geodesic/issues"
   },
-  "author": "HyperPace <info@hyperpace.ai>",
+  "author": "Dire Wulf <info@direwulf.com>",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

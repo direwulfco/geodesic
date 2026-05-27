@@ -11,10 +11,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml"><img src="https://github.com/hyperpaced/geodesic/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/direwulfco/geodesic/actions/workflows/ci.yml"><img src="https://github.com/direwulfco/geodesic/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic-topology-agent"><img src="https://img.shields.io/visual-studio-marketplace/v/HyperPace.geodesic-topology-agent?label=VS%20Code" alt="VS Code Marketplace" /></a>
-  <a href="https://open-vsx.org/extension/HyperPace/geodesic-topology-agent"><img src="https://img.shields.io/open-vsx/v/HyperPace/geodesic-topology-agent?label=Open%20VSX" alt="Open VSX" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topology-agent"><img src="https://img.shields.io/visual-studio-marketplace/v/direwulfco.geodesic-topology-agent?label=VS%20Code" alt="VS Code Marketplace" /></a>
+  <a href="https://open-vsx.org/extension/direwulfco/geodesic-topology-agent"><img src="https://img.shields.io/open-vsx/v/direwulfco/geodesic-topology-agent?label=Open%20VSX" alt="Open VSX" /></a>
 </p>
 
 ---
@@ -122,7 +122,7 @@ Crystals contain zero source code and zero PII — only structural fingerprints 
 
 ### VS Code, Cursor, Antigravity, VSCodium
 
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=HyperPace.geodesic-topology-agent) or [Open VSX Registry](https://open-vsx.org/extension/HyperPace/geodesic-topology-agent).
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topology-agent) or [Open VSX Registry](https://open-vsx.org/extension/direwulfco/geodesic-topology-agent).
 
 Or install from VSIX:
 ```bash
@@ -133,7 +133,7 @@ The VSIX is self-contained — the analysis engine is bundled. No separate insta
 
 ### JetBrains (IntelliJ, WebStorm, PyCharm, GoLand, Rider)
 
-JetBrains plugin — **coming soon.** [Join the waitlist](https://github.com/hyperpaced/geodesic/issues/new?title=JetBrains+waitlist).
+JetBrains plugin — **coming soon.** [Join the waitlist](https://github.com/direwulfco/geodesic/issues/new?title=JetBrains+waitlist).
 
 ### CLI
 
@@ -231,8 +231,8 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-> Geodesic is currently listed on the VS Code Marketplace and Open VSX as **Geodesic Topology Agent** while we wait for Microsoft to release the reserved `Geodesic` name. Same extension, same publisher (`HyperPace`), same code.
+> Geodesic is currently listed on the VS Code Marketplace and Open VSX as **Geodesic Topology Agent** while we wait for Microsoft to release the reserved `Geodesic` name. Same extension, same publisher (`direwulfco`), same code.
 
 ---
 
-*Built by [HyperPace](https://github.com/hyperpaced).*
+*Built by [Dire Wulf](https://github.com/direwulfco).*

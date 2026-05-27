@@ -44,6 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI wrapper: `geodesic analyze`.
 - MIT license.
 
-[Unreleased]: https://github.com/hyperpaced/Geodesic/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/hyperpaced/Geodesic/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/hyperpaced/Geodesic/releases/tag/v1.0.0
+[Unreleased]: https://github.com/direwulfco/geodesic/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/direwulfco/geodesic/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/direwulfco/geodesic/releases/tag/v1.0.0

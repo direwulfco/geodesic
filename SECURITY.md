@@ -17,10 +17,10 @@ Geodesic ships PHI/HIPAA handling as a core feature, so security reports are tak
 Use one of these private channels:
 
 1. **Preferred — GitHub Security Advisories**
-   https://github.com/hyperpaced/Geodesic/security/advisories/new
+   https://github.com/direwulfco/geodesic/security/advisories/new
    This creates a private advisory thread, lets us coordinate a fix, and supports CVE issuance.
 
-2. **Email** — `info@hyperpace.ai`
+2. **Email** — `info@direwulf.com`
    Use this if GitHub Security Advisories is unavailable to you. Include the same information listed below.
 
 Please include:

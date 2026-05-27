@@ -19,7 +19,7 @@ An AI provider API key (Anthropic, OpenAI, Gemini, Azure OpenAI, or a running Ol
 ## Setup
 
 ```bash
-git clone https://github.com/hyperpaced/geodesic.git
+git clone https://github.com/direwulfco/geodesic.git
 cd geodesic
 npm install
 npm run build
@@ -105,10 +105,10 @@ Branch off `main`. Open your PR back to `main`.
 
 ## Good First Issues
 
-Issues tagged [`good first issue`](https://github.com/hyperpaced/geodesic/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) are scoped to be self-contained and don't require deep knowledge of the full pipeline. A good place to start.
+Issues tagged [`good first issue`](https://github.com/direwulfco/geodesic/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) are scoped to be self-contained and don't require deep knowledge of the full pipeline. A good place to start.
 
 ---
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/hyperpaced/geodesic/discussions) for anything that isn't a bug or feature request.
+Open a [GitHub Discussion](https://github.com/direwulfco/geodesic/discussions) for anything that isn't a bug or feature request.

@@ -4,15 +4,15 @@
   "private": false,
   "description": "Geodesic CLI — deep-scan any repo from the terminal or CI. Architecture map, agent skill file, and scored gap report — locally, in minutes.",
   "license": "MIT",
-  "homepage": "https://github.com/hyperpaced/geodesic#readme",
+  "homepage": "https://github.com/direwulfco/geodesic#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperpaced/geodesic"
+    "url": "https://github.com/direwulfco/geodesic"
   },
   "bugs": {
-    "url": "https://github.com/hyperpaced/geodesic/issues"
+    "url": "https://github.com/direwulfco/geodesic/issues"
   },
-  "author": "HyperPace <info@hyperpace.ai>",
+  "author": "Dire Wulf <info@direwulf.com>",
   "bin": {
     "geodesic": "./dist/index.js",
     "geo": "./dist/index.js"

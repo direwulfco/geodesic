@@ -77,10 +77,10 @@ Geodesic's PII/HIPAA intercept layer runs locally before any data leaves your ma
 
 ## Resources
 
-- **Source:** [github.com/hyperpaced/geodesic](https://github.com/hyperpaced/geodesic)
-- **Issues:** [github.com/hyperpaced/geodesic/issues](https://github.com/hyperpaced/geodesic/issues)
+- **Source:** [github.com/direwulfco/geodesic](https://github.com/direwulfco/geodesic)
+- **Issues:** [github.com/direwulfco/geodesic/issues](https://github.com/direwulfco/geodesic/issues)
 - **License:** MIT
 
 ---
 
-*Built by [HyperPace](https://github.com/hyperpaced).*
+*Built by [Dire Wulf](https://github.com/direwulfco).*
