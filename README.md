@@ -13,8 +13,8 @@
 <p align="center">
   <a href="https://github.com/direwulfco/geodesic/actions/workflows/ci.yml"><img src="https://github.com/direwulfco/geodesic/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topology-agent"><img src="https://img.shields.io/visual-studio-marketplace/v/direwulfco.geodesic-topology-agent?label=VS%20Code" alt="VS Code Marketplace" /></a>
-  <a href="https://open-vsx.org/extension/direwulfco/geodesic-topology-agent"><img src="https://img.shields.io/open-vsx/v/direwulfco/geodesic-topology-agent?label=Open%20VSX" alt="Open VSX" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topo"><img src="https://img.shields.io/visual-studio-marketplace/v/direwulfco.geodesic-topo?label=VS%20Code" alt="VS Code Marketplace" /></a>
+  <a href="https://open-vsx.org/extension/direwulfco/geodesic-topo"><img src="https://img.shields.io/open-vsx/v/direwulfco/geodesic-topo?label=Open%20VSX" alt="Open VSX" /></a>
 </p>
 
 ---
@@ -122,11 +122,11 @@ Crystals contain zero source code and zero PII — only structural fingerprints 
 
 ### VS Code, Cursor, Antigravity, VSCodium
 
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topology-agent) or [Open VSX Registry](https://open-vsx.org/extension/direwulfco/geodesic-topology-agent).
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=direwulfco.geodesic-topo) or [Open VSX Registry](https://open-vsx.org/extension/direwulfco/geodesic-topo).
 
 Or install from VSIX:
 ```bash
-code --install-extension geodesic-topology-agent-1.1.0.vsix
+code --install-extension geodesic-topo-1.1.0.vsix
 ```
 
 The VSIX is self-contained — the analysis engine is bundled. No separate install required.
@@ -231,7 +231,7 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-> Geodesic is currently listed on the VS Code Marketplace and Open VSX as **Geodesic Topology Agent** while we wait for Microsoft to release the reserved `Geodesic` name. Same extension, same publisher (`direwulfco`), same code.
+> Geodesic is currently listed on the VS Code Marketplace and Open VSX as **Geodesic Topo** while we wait for Microsoft to release the reserved `Geodesic` name. Same extension, same publisher (`direwulfco`), same code.
 
 ---
 
